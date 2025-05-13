@@ -14,6 +14,8 @@ typedef int svm_unit;
 typedef struct svm_state {
     svm_unit memory[MEMORY_SIZE];
     svm_unit here;
+    svm_unit dp;
+    svm_unit rp;
 } svm_state;
 
 void svm_init(svm_state* svm);
@@ -21,9 +23,15 @@ void svm_load(svm_state* svm, const svm_unit* code, const svm_unit size);
 void svm_execute(svm_state* svm);
 
 svm_unit svm_unit_here(svm_state* svm);
-void svm_advance(svm_state* svm);
+void     svm_advance(svm_state* svm);
+void     svm_dstack_push(svm_state* svm, svm_unit value);
+svm_unit svm_dstack_pop(svm_state* svm);
+void     svm_rstack_push(svm_state* svm, svm_unit value);
+svm_unit svm_rstack_pop(svm_state* svm);
+void     svm_jump(svm_state* svm, svm_unit there);
 
 typedef enum svm_code {
+    SVM_LIT,
     SVM_CALL,
     SVM_EXIT
 } svm_code;
@@ -53,9 +61,19 @@ void svm_execute(svm_state* svm) {
     while (1) {
         code = svm_unit_here(svm);
         switch (code) {
+        case SVM_LIT:
+            svm_advance(svm);
+            svm_dstack_push(svm, svm_unit_here(svm));
+            svm_advance(svm);
+	    break;
         case SVM_CALL:
+            svm_advance(svm);
+            svm_rstack_push(svm, svm->here);
+            svm_jump(svm, svm_dstack_pop(svm));
+	    break;
         case SVM_EXIT:
             svm_advance(svm);
+            svm_jump(svm, svm_rstack_pop(svm));
             break;
         default:
             printf("Unrecognised op %d\n", code);
@@ -65,11 +83,39 @@ void svm_execute(svm_state* svm) {
 }
 
 svm_unit svm_unit_here(svm_state* svm) {
-    return svm->memory[svm->here];
+    return svm->memory[GENERAL_OFFSET + svm->here];
 }
 
 void svm_advance(svm_state* svm) {
-    svm->here = (svm->here + 1) % MEMORY_SIZE;
+    svm->here = (svm->here + 1) % GENERAL_SIZE;
+}
+
+void svm_dstack_push(svm_state* svm, svm_unit value) {
+    svm->memory[DSTACK_OFFSET + svm->dp] = value;
+    svm->dp = (svm->dp + 1) % DSTACK_SIZE;
+}
+
+svm_unit svm_dstack_pop(svm_state* svm) {
+    svm->dp = svm->dp - 1;
+    if (svm->dp < 0)
+        svm->dp = DSTACK_SIZE + svm->dp;
+    return svm->memory[DSTACK_OFFSET + svm->dp];
+}
+
+void svm_rstack_push(svm_state* svm, svm_unit value) {
+    svm->memory[RSTACK_OFFSET + svm->rp] = value;
+    svm->rp = (svm->rp + 1) % RSTACK_SIZE;
+}
+
+svm_unit svm_rstack_pop(svm_state* svm) {
+    svm->rp = svm->rp - 1;
+    if (svm->rp < 0)
+        svm->rp = RSTACK_SIZE + svm->rp;
+    return svm->memory[RSTACK_OFFSET + svm->rp];
+}
+
+void svm_jump(svm_state* svm, svm_unit there) {
+	svm->here = there;
 }
 
 #endif /* SVM_IMPLEMENTATION */

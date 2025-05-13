@@ -2,7 +2,7 @@
 #include "svm.h"
 
 const svm_unit code[] = {
-    SVM_CALL, SVM_EXIT, -1
+    SVM_LIT, 4, SVM_CALL, -1, SVM_EXIT
 };
 
 int main() {
