@@ -1,5 +1,6 @@
 CC=c89
 CFLAGS=-g -Wall -Wextra -Werror -pedantic
+CFLAGS+=-I.
 
 all: main
 
