@@ -1,3 +1,5 @@
+; echo program
+; read and write characters till newline
   LIT entry
   CALL
   -1

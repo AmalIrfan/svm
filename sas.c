@@ -19,6 +19,7 @@ typedef struct sas_state {
 } sas_state;
 
 const char* sas_get_token(FILE* fh);
+char sas_comment(FILE* fh);
 int sas_token_is_number(const char* token);
 svm_unit sas_make_number(const char* token);
 int sas_token_is_label(sas_state* sas, const char* token, int labelindex);
@@ -121,6 +122,9 @@ const char* sas_get_token(FILE* fh) {
     while (isspace(ch)) {
         ch = getc(fh);
     }
+    while (ch == ';') {
+        ch = sas_comment(fh);
+    }
     if (ch < 0)
         return NULL;
     while (!isspace(ch) && ch > 0) {
@@ -133,6 +137,15 @@ const char* sas_get_token(FILE* fh) {
     }
     buf[i++] = 0;
     return buf;
+}
+
+char sas_comment(FILE* fh) {
+    char ch = getc(fh);
+    while (ch != '\n')
+        ch = getc(fh);
+    while (isspace(ch))
+        ch = getc(fh);
+    return ch;
 }
 
 int sas_token_is_number(const char* token) {
