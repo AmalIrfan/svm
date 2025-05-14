@@ -2,12 +2,18 @@ CC=c89
 CFLAGS=-g -Wall -Wextra -Werror -pedantic
 CFLAGS+=-I.
 
-all: main
+all: build build/main
 
-%: %.c svm.h
+build:
+	mkdir -p build
+
+build/%: %.c svm.h
 	@$(CC) $(CFLAGS) -o $@ $<
 	@echo "CC  $@  <-  $^"
 
 EXAMPLES=$(wildcard examples/*.c)
 
-examples: $(patsubst %.c,%,$(EXAMPLES))
+examples: build/examples $(patsubst %.c,build/%,$(EXAMPLES))
+
+build/examples:
+	mkdir -p build/examples
