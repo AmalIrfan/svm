@@ -31,6 +31,7 @@ int sas_token_is_label(sas_state* sas, const char* token, int labelindex);
 svm_unit sas_get_label_address(sas_state* sas, const char* name);
 int sas_token_is_label_definition(const char* token);
 sas_label sas_make_label(const char* name, svm_unit here, int suffix);
+int sas_make_label_def(sas_state* sas, const char* token);
 int sas_resolve_label_uses(sas_state* sas);
 
 int main(int argc, const char* argv[]) {
@@ -55,8 +56,8 @@ int main(int argc, const char* argv[]) {
             sas.here++;
         }
         else if (sas_token_is_label_definition(token)) {
-            sas.label_defs.labels[sas.label_defs.index] = sas_make_label(token, sas.here, 1);
-            sas.label_defs.index++;
+            if (sas_make_label_def(&sas, token))
+                return 1;
         }
         else if (strcasecmp(token, "NOP") == 0) {
             sas.code[sas.here] = SVM_NOP;
@@ -201,6 +202,17 @@ int sas_token_is_label_definition(const char* token) {
     return 0;
 }
 
+int sas_make_label_def(sas_state* sas, const char* token) {
+    sas_label l = sas_make_label(token, sas->here, 1);
+    if (sas_label_exists(sas, l.name)) {
+        fprintf(stderr, "Error: label redefintion `%s`\n", l.name);
+        return 1;
+    }
+    sas->label_defs.labels[sas->label_defs.index] = l;
+    sas->label_defs.index++;
+    return 0;
+}
+
 sas_label sas_make_label(const char* name, svm_unit here, int suffix) {
     sas_label l = {0};
     int n = strlen(name) - suffix;
@@ -221,7 +233,6 @@ int sas_resolve_label_uses(sas_state* sas) {
         name = sas->label_uses.labels[j].name;
         there = sas->label_uses.labels[j].address;
         /* set uses to defs as the match */
-        /* result is: uses = last def */
         for (i = 0; i < sas->label_defs.index; i++) {
             if (strcmp(name, sas->label_defs.labels[i].name) == 0) {
                 sas->code[there] = sas->label_defs.labels[i].address;
