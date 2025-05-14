@@ -35,3 +35,12 @@ Ops
 | ``JNZ``   | pop two values from stack, conditional and address, then jump to |
 |           | address if conditional value is not zero                         |
 +-----------+------------------------------------------------------------------+
+
+Asm
+^^^
+
+A simple assembler.
+
+Features:
+- converts text to opcodes.
+- label support.
