@@ -91,12 +91,20 @@ int main(int argc, const char* argv[]) {
             sas.code[sas.here] = SVM_DROP;
             sas.here++;
         }
+        else if (strcasecmp(token, "SWAP") == 0) {
+            sas.code[sas.here] = SVM_SWAP;
+            sas.here++;
+        }
         else if (strcasecmp(token, "SUB") == 0) {
             sas.code[sas.here] = SVM_SUB;
             sas.here++;
         }
         else if (strcasecmp(token, "JNZ") == 0) {
             sas.code[sas.here] = SVM_JNZ;
+            sas.here++;
+        }
+        else if (strcasecmp(token, "LOAD") == 0) {
+            sas.code[sas.here] = SVM_LOAD;
             sas.here++;
         }
         else { /* assume it is a label */

@@ -23,6 +23,7 @@ void svm_load(svm_state* svm, const svm_unit* code, const svm_unit size);
 void svm_execute(svm_state* svm);
 
 svm_unit svm_unit_here(svm_state* svm);
+svm_unit svm_unit_there(svm_state* svm, svm_unit there);
 void     svm_advance(svm_state* svm);
 void     svm_dstack_push(svm_state* svm, svm_unit value);
 svm_unit svm_dstack_pop(svm_state* svm);
@@ -41,8 +42,10 @@ typedef enum svm_code {
     SVM_WRITE,
     SVM_DUP,
     SVM_DROP,
+    SVM_SWAP,
     SVM_SUB,
-    SVM_JNZ
+    SVM_JNZ,
+    SVM_LOAD
 } svm_code;
 
 #ifdef SVM_IMPLEMENTATION
@@ -103,6 +106,15 @@ void svm_execute(svm_state* svm) {
             svm_advance(svm);
             svm_dstack_pop(svm);
             break;
+        case SVM_SWAP:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_unit over = svm_dstack_view(svm);
+                svm_dstack_set_top(svm, top);
+                svm_dstack_push(svm, over);
+            }
+            break;
         case SVM_SUB:
             svm_advance(svm);
             {
@@ -120,6 +132,13 @@ void svm_execute(svm_state* svm) {
                 svm_dstack_pop(svm);
             }
             break;
+        case SVM_LOAD:
+            svm_advance(svm);
+            {
+                svm_unit there = svm_dstack_pop(svm);
+                svm_dstack_push(svm, svm_unit_there(svm, there));
+            }
+            break;
         default:
             printf("Unrecognised op %d\n", code);
             return;
@@ -129,6 +148,10 @@ void svm_execute(svm_state* svm) {
 
 svm_unit svm_unit_here(svm_state* svm) {
     return svm->memory[GENERAL_OFFSET + svm->here];
+}
+
+svm_unit svm_unit_there(svm_state* svm, svm_unit there) {
+    return svm->memory[GENERAL_OFFSET + there];
 }
 
 void svm_advance(svm_state* svm) {
