@@ -1,16 +1,26 @@
+#include <stdio.h>
+
 #define SVM_IMPLEMENTATION
 #include "svm.h"
 
-const svm_unit code[] = {
-    SVM_LIT, 4, SVM_CALL, -1,
-    SVM_READ, SVM_DUP, SVM_WRITE, SVM_LIT, 10, SVM_SUB, SVM_LIT, 4, SVM_JNZ,
-    SVM_EXIT
-};
+#define SVM_CODE_MAX 100
 
 int main() {
     svm_state svm;
+    svm_unit code[SVM_CODE_MAX] = {0};
+    int n = 0;
     svm_init(&svm);
-    svm_load(&svm, code, sizeof code / sizeof code[0]);
+
+    n = fread(code, sizeof(code[0]), SVM_CODE_MAX, stdin);
+    svm_load(&svm, code, n);
+
+    if (!freopen("/dev/tty", "r", stdin)) {
+        fflush(stdout);
+        perror("fopen: /dev/tty");
+        return 1;
+    }
+
     svm_execute(&svm);
+
     return 0;
 }

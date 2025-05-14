@@ -39,8 +39,14 @@ Ops
 Asm
 ^^^
 
-A simple assembler.
+A simple assembler (sas).
 
 Features:
 - converts text to opcodes.
 - label support.
+
+Example::
+
+    make build/main build/sas
+    build/sas examples/03_asm_input.txt > build/output.bin
+    build/main < build/output.bin

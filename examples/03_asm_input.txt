@@ -1,0 +1,12 @@
+  LIT entry
+  CALL
+  -1
+entry:
+  READ
+  DUP
+  WRITE
+  LIT 10
+  SUB
+  LIT entry
+  JNZ
+  EXIT
