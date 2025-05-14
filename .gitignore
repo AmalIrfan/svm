@@ -1,0 +1,6 @@
+# ignore dotfiles
+.*
+# include .gitignore
+!.gitignore
+
+build
