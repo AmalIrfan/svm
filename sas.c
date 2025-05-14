@@ -11,11 +11,16 @@ typedef struct sas_label {
     svm_unit address;
 } sas_label;
 
+typedef struct sas_label_array {
+    sas_label labels[10];
+    int index;
+} sas_label_array;
+
 typedef struct sas_state {
     svm_unit code[100];
-    sas_label labels[10];
+    sas_label_array label_defs;
+    sas_label_array label_uses;
     svm_unit here;
-    int label_index;
 } sas_state;
 
 const char* sas_get_token(FILE* fh);
@@ -23,9 +28,10 @@ char sas_comment(FILE* fh);
 int sas_token_is_number(const char* token);
 svm_unit sas_make_number(const char* token);
 int sas_token_is_label(sas_state* sas, const char* token, int labelindex);
-svm_unit sas_get_label_address(sas_state* sas, const char* name, int labelindex);
+svm_unit sas_get_label_address(sas_state* sas, const char* name);
 int sas_token_is_label_definition(const char* token);
-sas_label sas_make_label(const char* name, svm_unit here);
+sas_label sas_make_label(const char* name, svm_unit here, int suffix);
+int sas_resolve_label_uses(sas_state* sas);
 
 int main(int argc, const char* argv[]) {
     const char* token;
@@ -44,29 +50,13 @@ int main(int argc, const char* argv[]) {
         token = sas_get_token(fh);
         if (!token)
             break;
-        else if (sas_token_is_label_definition(token)) {
-            sas.labels[sas.label_index] = sas_make_label(token, sas.here);
-            sas.label_index++;
-        }
-        else {
-            sas.here++;
-        }
-    }
-    fseek(fh, 0, SEEK_SET);
-    sas.here = 0;
-    while (1) {
-        token = sas_get_token(fh);
-        if (!token)
-            break;
         else if (sas_token_is_number(token)) {
             sas.code[sas.here] = sas_make_number(token);
             sas.here++;
         }
-        else if (sas_token_is_label_definition(token))
-            (void)0;
-        else if (sas_token_is_label(&sas, token, sas.label_index)) {
-            sas.code[sas.here] = sas_get_label_address(&sas, token, sas.label_index);
-            sas.here++;
+        else if (sas_token_is_label_definition(token)) {
+            sas.label_defs.labels[sas.label_defs.index] = sas_make_label(token, sas.here, 1);
+            sas.label_defs.index++;
         }
         else if (strcasecmp(token, "NOP") == 0) {
             sas.code[sas.here] = SVM_NOP;
@@ -108,9 +98,17 @@ int main(int argc, const char* argv[]) {
             sas.code[sas.here] = SVM_JNZ;
             sas.here++;
         }
-        else
-            printf("Unrecognised: %s\n", token);
+        else { /* assume it is a label */
+            sas.label_uses.labels[sas.label_uses.index] = sas_make_label(token, sas.here, 0);
+            sas.label_uses.index++;
+            sas.code[sas.here] = 0;
+            sas.here++;
+        }
     }
+
+    if (sas_resolve_label_uses(&sas))
+        return 1;
+
     fwrite(sas.code, sizeof(sas.code[0]), sas.here, stdout);
     return 0;
 }
@@ -177,20 +175,20 @@ svm_unit sas_make_number(const char* token) {
     return n;
 }
 
-int sas_token_is_label(sas_state* sas, const char* token, int labelindex) {
+int sas_label_exists(sas_state* sas, const char* name) {
     int i = 0;
-    for (i = 0; i < labelindex; i++) {
-        if (strcasecmp(token, sas->labels[i].name) == 0)
+    for (i = 0; i < sas->label_defs.index; i++) {
+        if (strcasecmp(name, sas->label_defs.labels[i].name) == 0)
             return 1;
     }
     return 0;
 }
 
-svm_unit sas_get_label_address(sas_state* sas, const char* name, int labelindex) {
+svm_unit sas_get_label_address(sas_state* sas, const char* name) {
     int i = 0;
-    for (i = 0; i < labelindex; i++) {
-        if (strcasecmp(name, sas->labels[i].name) == 0)
-            return sas->labels[i].address;
+    for (i = 0; i < sas->label_defs.index; i++) {
+        if (strcasecmp(name, sas->label_defs.labels[i].name) == 0)
+            return sas->label_defs.labels[i].address;
     }
     fprintf(stderr, "Label not found: %s\n", name);
     return -1;
@@ -203,11 +201,37 @@ int sas_token_is_label_definition(const char* token) {
     return 0;
 }
 
-sas_label sas_make_label(const char* name, svm_unit here) {
+sas_label sas_make_label(const char* name, svm_unit here, int suffix) {
     sas_label l = {0};
-    int n = strlen(name) - 1;
+    int n = strlen(name) - suffix;
     memcpy(l.name, name, n);
     l.name[n] = 0;
     l.address = here;
     return l;
+}
+
+int sas_resolve_label_uses(sas_state* sas) {
+    int i = 0;
+    int j = 0;
+    const char *name = NULL;
+    svm_unit there = 0;
+    int matches = 0;
+    for (j = 0; j < sas->label_uses.index; j++) {
+        matches = 0;
+        name = sas->label_uses.labels[j].name;
+        there = sas->label_uses.labels[j].address;
+        /* set uses to defs as the match */
+        /* result is: uses = last def */
+        for (i = 0; i < sas->label_defs.index; i++) {
+            if (strcmp(name, sas->label_defs.labels[i].name) == 0) {
+                sas->code[there] = sas->label_defs.labels[i].address;
+                matches++;
+            }
+        }
+        if (!matches) {
+            fprintf(stderr, "Unrecognised: %s\n", name);
+            return 1;
+        }
+    }
+    return 0;
 }
