@@ -1,0 +1,23 @@
+; HELLO WORLD
+  LIT entry
+  CALL
+  -1
+msg:
+  72 69 76 76 79 32 87 79 82 76 68 10
+entry:
+  LIT msg  ; msg
+loop:
+  DUP      ; msg msg
+  LOAD     ; msg c
+  DUP      ; msg c c
+  WRITE    ; msg c
+  SWAP     ; c msg
+  LIT -1   ; c msg -1
+  SUB      ; c msg-1
+  SWAP     ; msg-1 c
+  LIT 10   ; msg-1 c 10
+  SUB      ; msg-1 c-10
+  LIT loop ; msg-1 c-10 loop
+  JNZ      ; msg-1
+  DROP
+  EXIT

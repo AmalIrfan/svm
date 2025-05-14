@@ -26,6 +26,8 @@ Ops
 +-----------+------------------------------------------------------------------+
 | ``DROP``  | pop stack top                                                    |
 +-----------+------------------------------------------------------------------+
+| ``SWAP``  | exchange two values on the top of stack                          |
++-----------+------------------------------------------------------------------+
 | ``READ``  | push user input to stack                                         |
 +-----------+------------------------------------------------------------------+
 | ``WRITE`` | pop the value (character) on the stack and write it to output    |
@@ -34,6 +36,9 @@ Ops
 +-----------+------------------------------------------------------------------+
 | ``JNZ``   | pop two values from stack, conditional and address, then jump to |
 |           | address if conditional value is not zero                         |
++-----------+------------------------------------------------------------------+
+| ``LOAD``  | pop the address on stack and push the value at that address onto |
+|           | stack                                                            |
 +-----------+------------------------------------------------------------------+
 
 Asm
@@ -44,9 +49,44 @@ A simple assembler (sas).
 Features:
 - converts text to opcodes.
 - label support.
+- comments support.
 
 Example::
 
     make build/main build/sas
-    build/sas examples/03_asm_input.txt > build/output.bin
+    build/sas examples/02_asm_input.txt > build/output.bin
     build/main < build/output.bin
+
+More Examples
+-------------
+
+Hello World
+^^^^^^^^^^^
+
+`03_hello_world.txt <./examples/03_hello_world.txt>`_
+
+::
+
+    ; HELLO WORLD
+      LIT entry
+      CALL
+      -1
+    msg:
+      72 69 76 76 79 32 87 79 82 76 68 10
+    entry:
+      LIT msg  ; msg
+    loop:
+      DUP      ; msg msg
+      LOAD     ; msg c
+      DUP      ; msg c c
+      WRITE    ; msg c
+      SWAP     ; c msg
+      LIT -1   ; c msg -1
+      SUB      ; c msg-1
+      SWAP     ; msg-1 c
+      LIT 10   ; msg-1 c 10
+      SUB      ; msg-1 c-10
+      LIT loop ; msg-1 c-10 loop
+      JNZ      ; msg-1
+      DROP
+      EXIT
