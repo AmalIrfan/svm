@@ -28,7 +28,6 @@ char sas_comment(FILE* fh);
 int sas_token_is_number(const char* token);
 svm_unit sas_make_number(const char* token);
 int sas_token_is_label(sas_state* sas, const char* token, int labelindex);
-svm_unit sas_get_label_address(sas_state* sas, const char* name);
 int sas_token_is_label_definition(const char* token);
 sas_label sas_make_label(const char* name, svm_unit here, int suffix);
 int sas_make_label_def(sas_state* sas, const char* token);
@@ -191,16 +190,6 @@ int sas_label_exists(sas_state* sas, const char* name) {
             return 1;
     }
     return 0;
-}
-
-svm_unit sas_get_label_address(sas_state* sas, const char* name) {
-    int i = 0;
-    for (i = 0; i < sas->label_defs.index; i++) {
-        if (strcasecmp(name, sas->label_defs.labels[i].name) == 0)
-            return sas->label_defs.labels[i].address;
-    }
-    fprintf(stderr, "Label not found: %s\n", name);
-    return -1;
 }
 
 int sas_token_is_label_definition(const char* token) {
