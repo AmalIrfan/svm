@@ -63,7 +63,7 @@ Example::
 
     make build/main build/sas
     build/sas examples/02_asm_input.txt > build/output.bin
-    build/main < build/output.bin
+    build/main build/output.bin 2>log
 
 More Examples
 -------------

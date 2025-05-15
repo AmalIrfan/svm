@@ -1,0 +1,94 @@
+  lit entry
+  call
+  -1
+buf: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+entry:
+  lit buf
+  lit getnext
+  call
+  lit buf
+  lit puts
+  call
+  lit 10
+  write
+  lit buf
+  lit getnext
+  call
+  lit buf
+  lit puts
+  call
+  lit 10
+  write
+  exit
+getnext:
+loop1:
+  read       ; buf c
+  dup        ; buf c c
+  lit 32     ; buf c c 32
+  sub        ; buf c c-32
+  lit !space ; buf c c-32 !space
+  jnz        ; buf c
+space:
+  drop      ; buf
+  lit 1     ; buf 1
+  lit loop1 ; buf 1 loop1
+  jnz
+!space:
+  dup     ; buf c c
+  lit 10  ; buf c c 10
+  sub     ; buf c c-10
+  lit !nl ; buf c c-10 !nl
+  jnz     ; buf c
+nl:
+  drop      ; buf
+  lit 1     ; buf 1
+  lit loop1 ; buf 1 loop1
+  jnz
+!nl:
+loop2:
+  over        ; buf c buf
+  store       ; buf
+  lit -1      ; buf -1
+  sub         ; buf+1
+  read        ; buf' c
+  dup         ; buf' c c
+  lit 32      ; buf' c c 32
+  sub         ; buf' c c-32
+  lit !space2 ; buf' c c-32 !space2
+  jnz         ; buf' c
+space2:
+  drop ; buf'
+  drop
+  exit
+!space2:
+  dup      ; buf' c c
+  lit 10   ; buf' c c 10
+  sub      ; buf' c c-10
+  lit !nl2 ; buf' c c-10 !nl2
+  jnz      ; buf' c
+nl2:
+  drop ; buf'
+  drop
+  exit
+!nl2:
+  lit 1     ; buf' c 1
+  lit loop2 ; buf' c 1 loop2
+  jnz
+puts:
+loop3:
+  dup       ; buf buf 
+  load      ; buf c
+  dup       ; buf c c
+  lit !null ; buf c c !null
+  jnz       ; buf c
+null:
+  drop      ; buf
+  drop
+  exit
+!null:
+  write     ; buf
+  lit -1    ; buf -1
+  sub       ; buf+1
+  lit 1     ; buf' 1
+  lit loop3 ; buf' 1 putsloop
+  jnz
