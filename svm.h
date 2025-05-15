@@ -24,6 +24,7 @@ void svm_execute(svm_state* svm);
 
 svm_unit svm_unit_here(svm_state* svm);
 svm_unit svm_unit_there(svm_state* svm, svm_unit there);
+void svm_store_there(svm_state* svm, svm_unit there, svm_unit value);
 void     svm_advance(svm_state* svm);
 void     svm_dstack_push(svm_state* svm, svm_unit value);
 svm_unit svm_dstack_pop(svm_state* svm);
@@ -43,10 +44,29 @@ typedef enum svm_code {
     SVM_DUP,
     SVM_DROP,
     SVM_SWAP,
+    SVM_OVER,
     SVM_SUB,
     SVM_JNZ,
+    SVM_STORE,
     SVM_LOAD
 } svm_code;
+
+const char* svm_code_str[] = {
+    "NOP",
+    "LIT",
+    "CALL",
+    "EXIT",
+    "READ",
+    "WRITE",
+    "DUP",
+    "DROP",
+    "SWAP",
+    "OVER",
+    "SUB",
+    "JNZ",
+    "STORE",
+    "LOAD"
+};
 
 #ifdef SVM_IMPLEMENTATION
 #include <stdio.h>
@@ -72,6 +92,28 @@ void svm_execute(svm_state* svm) {
     svm_code code = SVM_NOP;
     while (1) {
         code = (svm_code)svm_unit_here(svm);
+#if 1
+        {
+            int i = 0;
+            fprintf(stderr, "%3d %5s", svm->here, ((int)code > 0 ? svm_code_str[code] : ""));
+            if (code == SVM_LIT) {
+                fprintf(stderr, " %2d ", svm_unit_there(svm, svm->here + 1));
+            } else {
+                fputs("    ", stderr);
+            }
+            putc('[', stderr);
+            for (i = 0; i < svm->dp; i++) {
+                fprintf(stderr, "%d%s", svm->memory[DSTACK_OFFSET + i],
+                        (i + 1 >= svm->dp ? "" : ", "));
+            }
+            fputs("] r[", stderr);
+            for (i = 0; i < svm->rp; i++) {
+                fprintf(stderr, "%d%s", svm->memory[RSTACK_OFFSET + i],
+                        (i + 1 >= svm->rp ? "" : ", "));
+            }
+            fputs("]\n", stderr);
+        }
+#endif
         switch (code) {
         case SVM_NOP:
              svm_advance(svm);
@@ -115,6 +157,15 @@ void svm_execute(svm_state* svm) {
                 svm_dstack_push(svm, over);
             }
             break;
+        case SVM_OVER:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_unit over = svm_dstack_view(svm);
+                svm_dstack_push(svm, top);
+                svm_dstack_push(svm, over);
+            }
+            break;
         case SVM_SUB:
             svm_advance(svm);
             {
@@ -130,6 +181,13 @@ void svm_execute(svm_state* svm) {
                         svm_jump(svm, there);
                 }
                 svm_dstack_pop(svm);
+            }
+            break;
+        case SVM_STORE:
+            svm_advance(svm);
+            {
+                svm_unit there = svm_dstack_pop(svm);
+                svm_store_there(svm, there, svm_dstack_pop(svm));
             }
             break;
         case SVM_LOAD:
@@ -152,6 +210,14 @@ svm_unit svm_unit_here(svm_state* svm) {
 
 svm_unit svm_unit_there(svm_state* svm, svm_unit there) {
     return svm->memory[GENERAL_OFFSET + there];
+}
+
+void svm_store_there(svm_state* svm, svm_unit there, svm_unit value) {
+    if (there < 0)
+        there = GENERAL_SIZE - there;
+    else
+        there = there % GENERAL_SIZE;
+    svm->memory[GENERAL_OFFSET + there] = value;
 }
 
 void svm_advance(svm_state* svm) {

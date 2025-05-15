@@ -6,7 +6,7 @@
 #define SVM_IMPLEMENTATION
 #include "svm.h"
 
-#define SAS_MAX_LABELS 10
+#define SAS_MAX_LABELS 20
 
 typedef struct sas_label {
     char name[10];
@@ -19,7 +19,7 @@ typedef struct sas_label_array {
 } sas_label_array;
 
 typedef struct sas_state {
-    svm_unit code[100];
+    svm_unit code[200];
     sas_label_array label_defs;
     sas_label_array label_uses;
     svm_unit here;
@@ -97,12 +97,20 @@ int main(int argc, const char* argv[]) {
             sas.code[sas.here] = SVM_SWAP;
             sas.here++;
         }
+        else if (strcasecmp(token, "OVER") == 0) {
+            sas.code[sas.here] = SVM_OVER;
+            sas.here++;
+        }
         else if (strcasecmp(token, "SUB") == 0) {
             sas.code[sas.here] = SVM_SUB;
             sas.here++;
         }
         else if (strcasecmp(token, "JNZ") == 0) {
             sas.code[sas.here] = SVM_JNZ;
+            sas.here++;
+        }
+        else if (strcasecmp(token, "STORE") == 0) {
+            sas.code[sas.here] = SVM_STORE;
             sas.here++;
         }
         else if (strcasecmp(token, "LOAD") == 0) {
