@@ -30,6 +30,8 @@ Ops
 +-----------+------------------------------------------------------------------+
 | ``SWAP``  | exchange two values on the top of stack                          |
 +-----------+------------------------------------------------------------------+
+| ``OVER``  | copy the value second to top of stack to the top                 |
++-----------+------------------------------------------------------------------+
 | ``READ``  | push user input to stack                                         |
 +-----------+------------------------------------------------------------------+
 | ``WRITE`` | pop the value (character) on the stack and write it to output    |
@@ -41,6 +43,9 @@ Ops
 +-----------+------------------------------------------------------------------+
 | ``LOAD``  | pop the address on stack and push the value at that address onto |
 |           | stack                                                            |
++-----------+------------------------------------------------------------------+
+| ``STORE`` | pop the value and address on stack and store that value at the   |
+|           | given address                                                    |
 +-----------+------------------------------------------------------------------+
 
 Asm
