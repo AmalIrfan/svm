@@ -2,12 +2,10 @@ CC=c89
 CFLAGS=-g -Wall -Wextra -Werror -pedantic
 CFLAGS+=-I.
 
-all: build build/main
-
-build:
-	mkdir -p build
+all: build/main build/sas
 
 build/%: %.c svm.h
+	@mkdir -p build
 	@$(CC) $(CFLAGS) -o $@ $<
 	@echo "CC  $@  <-  $^"
 
