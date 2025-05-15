@@ -6,13 +6,15 @@
 #define SVM_IMPLEMENTATION
 #include "svm.h"
 
+#define SAS_MAX_LABELS 10
+
 typedef struct sas_label {
     char name[10];
     svm_unit address;
 } sas_label;
 
 typedef struct sas_label_array {
-    sas_label labels[10];
+    sas_label labels[SAS_MAX_LABELS];
     int index;
 } sas_label_array;
 
@@ -31,6 +33,7 @@ int sas_token_is_label(sas_state* sas, const char* token, int labelindex);
 int sas_token_is_label_definition(const char* token);
 sas_label sas_make_label(const char* name, svm_unit here, int suffix);
 int sas_make_label_def(sas_state* sas, const char* token);
+int sas_use_label(sas_state* sas, const char* name);
 int sas_resolve_label_uses(sas_state* sas);
 
 int main(int argc, const char* argv[]) {
@@ -107,10 +110,8 @@ int main(int argc, const char* argv[]) {
             sas.here++;
         }
         else { /* assume it is a label */
-            sas.label_uses.labels[sas.label_uses.index] = sas_make_label(token, sas.here, 0);
-            sas.label_uses.index++;
-            sas.code[sas.here] = 0;
-            sas.here++;
+            if (sas_use_label(&sas, token))
+                return 1;
         }
     }
 
@@ -201,6 +202,10 @@ int sas_token_is_label_definition(const char* token) {
 
 int sas_make_label_def(sas_state* sas, const char* token) {
     sas_label l = sas_make_label(token, sas->here, 1);
+    if (sas->label_defs.index >= SAS_MAX_LABELS) {
+        fprintf(stderr, "Error: too many label defs\n");
+        return 1;
+    }
     if (sas_label_exists(sas, l.name)) {
         fprintf(stderr, "Error: label redefintion `%s`\n", l.name);
         return 1;
@@ -217,6 +222,18 @@ sas_label sas_make_label(const char* name, svm_unit here, int suffix) {
     l.name[n] = 0;
     l.address = here;
     return l;
+}
+
+int sas_use_label(sas_state* sas, const char* name) {
+    if (sas->label_uses.index >= SAS_MAX_LABELS) {
+        fprintf(stderr, "Error: too many label uses\n");
+        return 1;
+    }
+    sas->label_uses.labels[sas->label_uses.index] = sas_make_label(name, sas->here, 0);
+    sas->label_uses.index++;
+    sas->code[sas->here] = 0;
+    sas->here++;
+    return 0;
 }
 
 int sas_resolve_label_uses(sas_state* sas) {
