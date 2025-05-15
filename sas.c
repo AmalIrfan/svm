@@ -137,7 +137,7 @@ const char* sas_get_token(FILE* fh) {
     while (!isspace(ch) && ch > 0) {
         buf[i++] = ch;
         if (i + 1 >= (int)sizeof(buf)) {
-            printf("token overflow: %.*s\n", i, buf);
+            fprintf(stderr, "token overflow: %.*s\n", i, buf);
             break;
         }
         ch = getc(fh);
