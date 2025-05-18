@@ -45,10 +45,27 @@ typedef enum svm_code {
     SVM_DROP,
     SVM_SWAP,
     SVM_OVER,
+    SVM_ROT,
+    SVM_RPUSH,
+    SVM_RPOP,
     SVM_SUB,
+    SVM_ADD,
+    SVM_MUL,
+    SVM_DIV,
+    SVM_LT,
+    SVM_EQ,
+    SVM_GT,
+    SVM_LTE,
+    SVM_NEQ,
+    SVM_GTE,
+    SVM_NOT,
+    SVM_AND,
+    SVM_OR,
+    SVM_XOR,
     SVM_JNZ,
     SVM_STORE,
-    SVM_LOAD
+    SVM_LOAD,
+    _SVM_MAX
 } svm_code;
 
 const char* svm_code_str[] = {
@@ -62,7 +79,23 @@ const char* svm_code_str[] = {
     "DROP",
     "SWAP",
     "OVER",
+    "ROT",
+    "RPUSH",
+    "RPOP",
     "SUB",
+    "ADD",
+    "MUL",
+    "DIV",
+    "LT",
+    "EQ",
+    "GT",
+    "LTE",
+    "NEQ",
+    "GTE",
+    "NOT",
+    "AND",
+    "OR",
+    "XOR",
     "JNZ",
     "STORE",
     "LOAD"
@@ -166,11 +199,122 @@ void svm_execute(svm_state* svm) {
                 svm_dstack_push(svm, over);
             }
             break;
+        case SVM_ROT:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_unit over = svm_dstack_pop(svm);
+                svm_unit back = svm_dstack_pop(svm);
+                svm_dstack_push(svm, over);
+                svm_dstack_push(svm, top);
+                svm_dstack_push(svm, back);
+            }
+            break;
+        case SVM_RPUSH:
+            svm_advance(svm);
+            svm_rstack_push(svm, svm_dstack_pop(svm));
+            break;
+        case SVM_RPOP:
+            svm_advance(svm);
+            svm_dstack_push(svm, svm_rstack_pop(svm));
+            break;
         case SVM_SUB:
             svm_advance(svm);
             {
                 svm_unit top = svm_dstack_pop(svm);
                 svm_dstack_set_top(svm, svm_dstack_view(svm) - top);
+            }
+            break;
+        case SVM_ADD:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) + top);
+            }
+            break;
+        case SVM_MUL:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) * top);
+            }
+            break;
+        case SVM_DIV:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_unit over = svm_dstack_view(svm);
+                svm_dstack_set_top(svm, over / top);
+                svm_dstack_push(svm, over % top);
+            }
+            break;
+        case SVM_LT:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) < top);
+            }
+            break;
+        case SVM_EQ:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) == top);
+            }
+            break;
+        case SVM_GT:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) > top);
+            }
+            break;
+        case SVM_LTE:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) <= top);
+            }
+            break;
+        case SVM_NEQ:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) != top);
+            }
+            break;
+        case SVM_GTE:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) >= top);
+            }
+            break;
+        case SVM_NOT:
+            svm_advance(svm);
+            {
+                svm_dstack_set_top(svm, ~svm_dstack_view(svm));
+            }
+            break;
+        case SVM_AND:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) & top);
+            }
+            break;
+        case SVM_OR:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) | top);
+            }
+            break;
+        case SVM_XOR:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) ^ top);
             }
             break;
         case SVM_JNZ:

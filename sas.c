@@ -35,6 +35,7 @@ sas_label sas_make_label(const char* name, svm_unit here, int suffix);
 int sas_make_label_def(sas_state* sas, const char* token);
 int sas_use_label(sas_state* sas, const char* name);
 int sas_resolve_label_uses(sas_state* sas);
+int sas_try_assemble(sas_state* sas, const char* token);
 
 int main(int argc, const char* argv[]) {
     const char* token;
@@ -61,61 +62,8 @@ int main(int argc, const char* argv[]) {
             if (sas_make_label_def(&sas, token))
                 return 1;
         }
-        else if (strcasecmp(token, "NOP") == 0) {
-            sas.code[sas.here] = SVM_NOP;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "LIT") == 0) {
-            sas.code[sas.here] = SVM_LIT;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "CALL") == 0) {
-            sas.code[sas.here] = SVM_CALL;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "EXIT") == 0) {
-            sas.code[sas.here] = SVM_EXIT;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "READ") == 0) {
-            sas.code[sas.here] = SVM_READ;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "WRITE") == 0) {
-            sas.code[sas.here] = SVM_WRITE;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "DUP") == 0) {
-            sas.code[sas.here] = SVM_DUP;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "DROP") == 0) {
-            sas.code[sas.here] = SVM_DROP;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "SWAP") == 0) {
-            sas.code[sas.here] = SVM_SWAP;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "OVER") == 0) {
-            sas.code[sas.here] = SVM_OVER;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "SUB") == 0) {
-            sas.code[sas.here] = SVM_SUB;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "JNZ") == 0) {
-            sas.code[sas.here] = SVM_JNZ;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "STORE") == 0) {
-            sas.code[sas.here] = SVM_STORE;
-            sas.here++;
-        }
-        else if (strcasecmp(token, "LOAD") == 0) {
-            sas.code[sas.here] = SVM_LOAD;
-            sas.here++;
+        else if (sas_try_assemble(&sas, token) == 0) {
+            /* successfully assembled */
         }
         else { /* assume it is a label */
             if (sas_use_label(&sas, token))
@@ -267,4 +215,22 @@ int sas_resolve_label_uses(sas_state* sas) {
         }
     }
     return 0;
+}
+
+int sas_try_assemble(sas_state* sas, const char* token) {
+    static char dir[SAS_MAX_LABELS];
+    int i = 0;
+    svm_code code = SVM_NOP;
+    strcpy(dir, token);
+    for (i = 0; i < (int)strlen(dir); i++) {
+        dir[i] = toupper(dir[i]);
+    }
+    for (code = SVM_NOP; code < _SVM_MAX; code++) {
+        if (strcmp(svm_code_str[code], dir) == 0) {
+            sas->code[sas->here] = code;
+            sas->here++;
+            return 0;
+        }
+    }
+    return 1;
 }
