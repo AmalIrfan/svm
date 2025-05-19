@@ -1,7 +1,9 @@
 #ifndef _SVM_H_
 #define _SVM_H_
+#include <stdint.h>
 
 typedef int svm_unit;
+typedef uint16_t svm_addr;
 
 #define MEMORY_SIZE 0x10000
 #define DSTACK_OFFSET  0x0000
@@ -13,7 +15,7 @@ typedef int svm_unit;
 
 typedef struct svm_state {
     svm_unit memory[MEMORY_SIZE];
-    svm_unit here;
+    svm_addr pc;
     svm_unit dp;
     svm_unit rp;
 } svm_state;
@@ -23,8 +25,8 @@ void svm_load(svm_state* svm, const svm_unit* code, const svm_unit size);
 void svm_execute(svm_state* svm);
 
 svm_unit svm_unit_here(svm_state* svm);
-svm_unit svm_unit_there(svm_state* svm, svm_unit there);
-void svm_store_there(svm_state* svm, svm_unit there, svm_unit value);
+svm_unit svm_unit_there(svm_state* svm, svm_addr there);
+void svm_store_there(svm_state* svm, svm_addr there, svm_unit value);
 void     svm_advance(svm_state* svm);
 void     svm_dstack_push(svm_state* svm, svm_unit value);
 svm_unit svm_dstack_pop(svm_state* svm);
@@ -32,7 +34,7 @@ svm_unit svm_dstack_view(svm_state* svm);
 void     svm_dstack_set_top(svm_state* svm, svm_unit value);
 void     svm_rstack_push(svm_state* svm, svm_unit value);
 svm_unit svm_rstack_pop(svm_state* svm);
-void     svm_jump(svm_state* svm, svm_unit there);
+void     svm_jump(svm_state* svm, svm_addr there);
 
 typedef enum svm_code {
     SVM_NOP,
@@ -128,9 +130,9 @@ void svm_execute(svm_state* svm) {
 #if 1
         {
             int i = 0;
-            fprintf(stderr, "%3d %5s", svm->here, ((int)code > 0 ? svm_code_str[code] : ""));
+            fprintf(stderr, "%3d %5s", svm->pc, ((int)code > 0 ? svm_code_str[code] : ""));
             if (code == SVM_LIT) {
-                fprintf(stderr, " %2d ", svm_unit_there(svm, svm->here + 1));
+                fprintf(stderr, " %2d ", svm_unit_there(svm, svm->pc + 1));
             } else {
                 fputs("    ", stderr);
             }
@@ -158,7 +160,7 @@ void svm_execute(svm_state* svm) {
             break;
         case SVM_CALL:
             svm_advance(svm);
-            svm_rstack_push(svm, svm->here);
+            svm_rstack_push(svm, svm->pc);
             svm_jump(svm, svm_dstack_pop(svm));
             break;
         case SVM_EXIT:
@@ -349,23 +351,20 @@ void svm_execute(svm_state* svm) {
 }
 
 svm_unit svm_unit_here(svm_state* svm) {
-    return svm->memory[GENERAL_OFFSET + svm->here];
+    return svm->memory[GENERAL_OFFSET + svm->pc];
 }
 
-svm_unit svm_unit_there(svm_state* svm, svm_unit there) {
+svm_unit svm_unit_there(svm_state* svm, svm_addr there) {
     return svm->memory[GENERAL_OFFSET + there];
 }
 
-void svm_store_there(svm_state* svm, svm_unit there, svm_unit value) {
-    if (there < 0)
-        there = GENERAL_SIZE - there;
-    else
-        there = there % GENERAL_SIZE;
+void svm_store_there(svm_state* svm, svm_addr there, svm_unit value) {
+    there = there % GENERAL_SIZE;
     svm->memory[GENERAL_OFFSET + there] = value;
 }
 
 void svm_advance(svm_state* svm) {
-    svm->here = (svm->here + 1) % GENERAL_SIZE;
+    svm->pc = (svm->pc + 1) % GENERAL_SIZE;
 }
 
 void svm_dstack_push(svm_state* svm, svm_unit value) {
@@ -406,8 +405,8 @@ svm_unit svm_rstack_pop(svm_state* svm) {
     return svm->memory[RSTACK_OFFSET + svm->rp];
 }
 
-void svm_jump(svm_state* svm, svm_unit there) {
-     svm->here = there;
+void svm_jump(svm_state* svm, svm_addr there) {
+     svm->pc = there;
 }
 
 #endif /* SVM_IMPLEMENTATION */
