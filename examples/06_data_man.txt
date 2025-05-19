@@ -1,0 +1,59 @@
+  call entry
+  -1
+count: 0
+entry:
+  lita count ; 04 00
+  load       ; c
+
+  lit 1 ; c 1
+  add   ; c+1
+  dup   ; c' c'
+
+  lita count ; c' c' 04 00
+  store      ; c'
+
+  dup ; c' c'
+  call print_num
+
+  lit 10    ; c' 10
+  lt        ; c'<10
+  jnz entry
+
+  exit
+
+print_num:
+  nop   ; n
+  lit 0 ; n w
+  rpush ; n
+.pn_loop:
+
+  lit 10 ; n 10
+  div    ; n/10 n%10
+  lit 48 ; n' n%10 48
+  add    ; n' d
+  swap   ; d n'
+
+  rpop   ; d n' w
+  lit 1  ; d n' w 1
+  add    ; d n' w+1
+  rpush  ; d n'
+
+  dup          ; d n' n'
+  jnz .pn_loop ; d n'
+
+  drop ; d
+  rpop ; d w
+.pn_loop2:
+  swap  ; w d
+  write ; w
+
+  lit 1 ; w 1
+  sub   ; w-1
+
+  dup           ; w' w'
+  jnz .pn_loop2 ; w'
+
+  drop
+  lit 10
+  write
+  exit

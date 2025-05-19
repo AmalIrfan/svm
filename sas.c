@@ -9,9 +9,9 @@
 #define SAS_MAX_LABELS 20
 
 typedef struct sas_label {
-    char name[10];
+    char name[20];
     svm_addr address;
-    int call;
+    int addr;
 } sas_label;
 
 typedef struct sas_label_array {
@@ -24,7 +24,7 @@ typedef struct sas_state {
     sas_label_array label_defs;
     sas_label_array label_uses;
     svm_addr here;
-    int call;
+    int addr;
     FILE* fh;
 } sas_state;
 
@@ -34,7 +34,7 @@ int sas_token_is_number(const char* token);
 int sas_make_number(const char* token);
 int sas_token_is_label(sas_state* sas, const char* token, int labelindex);
 int sas_token_is_label_definition(const char* token);
-sas_label sas_make_label(const char* name, svm_addr here, int suffix, int call);
+sas_label sas_make_label(const char* name, svm_addr here, int suffix, int addr);
 int sas_make_label_def(sas_state* sas, const char* token);
 int sas_use_label(sas_state* sas, const char* name);
 int sas_resolve_label_uses(sas_state* sas);
@@ -76,13 +76,13 @@ int sas_assemble(sas_state* sas) {
             break;
         else if (sas_token_is_number(token)) {
             int n = sas_make_number(token);
-            if (n <= 255 && !sas->call) {
+            if (n <= 255 && !sas->addr) {
                 sas->code[sas->here] = n;
                 sas->here++;
-            } else if (n <= 0xFFFF && sas->call) {
+            } else if (n <= 0xFFFF && sas->addr) {
                 *(svm_addr*)(sas->code + sas->here) = n;
                 sas->here = sas->here + (sizeof(svm_addr) / sizeof(svm_unit));
-                sas->call = 0;
+                sas->addr = 0;
             } else {
                 fprintf(stdout, "Error: Out of bounds: %d\n", n);
                 return 1;
@@ -121,7 +121,7 @@ int sas_disassemble(sas_state* sas) {
             fread(&val, sizeof(svm_unit), 1, sas->fh);
             fprintf(stdout, " %hhd", val);
         }
-        if (ins == SVM_CALL) {
+        if (ins == SVM_CALL || ins == SVM_LITA) {
             fread(&val, sizeof(svm_addr), 1, sas->fh);
             fprintf(stdout, " %hd", val);
         }
@@ -132,7 +132,7 @@ int sas_disassemble(sas_state* sas) {
 }
 
 const char* sas_get_token(FILE* fh) {
-    static char buf[10];
+    static char buf[20];
     int i = 0;
     char ch = getc(fh);
     while (isspace(ch)) {
@@ -224,13 +224,13 @@ int sas_make_label_def(sas_state* sas, const char* token) {
     return 0;
 }
 
-sas_label sas_make_label(const char* name, svm_addr here, int suffix, int call) {
+sas_label sas_make_label(const char* name, svm_addr here, int suffix, int addr) {
     sas_label l = {0};
     int n = strlen(name) - suffix;
     memcpy(l.name, name, n);
     l.name[n] = 0;
     l.address = here;
-    l.call = call;
+    l.addr = addr;
     return l;
 }
 
@@ -239,9 +239,9 @@ int sas_use_label(sas_state* sas, const char* name) {
         fprintf(stderr, "Error: too many label uses\n");
         return 1;
     }
-    sas->label_uses.labels[sas->label_uses.index] = sas_make_label(name, sas->here, 0, sas->call);
+    sas->label_uses.labels[sas->label_uses.index] = sas_make_label(name, sas->here, 0, sas->addr);
     sas->label_uses.index++;
-    if (sas->call) {
+    if (sas->addr) {
         *(svm_addr*)(sas->code + sas->here) = 0;
         sas->here = sas->here + sizeof(svm_addr) / sizeof(svm_unit);
     }
@@ -249,7 +249,7 @@ int sas_use_label(sas_state* sas, const char* name) {
         sas->code[sas->here] = 0;
         sas->here++;
     }
-    sas->call = 0;
+    sas->addr = 0;
     return 0;
 }
 
@@ -258,17 +258,17 @@ int sas_resolve_label_uses(sas_state* sas) {
     int j = 0;
     const char *name = NULL;
     svm_addr there = 0;
-    int call = 0;
+    int addr = 0;
     int matches = 0;
     for (j = 0; j < sas->label_uses.index; j++) {
         matches = 0;
         name = sas->label_uses.labels[j].name;
         there = sas->label_uses.labels[j].address;
-        call = sas->label_uses.labels[j].call;
+        addr = sas->label_uses.labels[j].addr;
         /* set uses to defs as the match */
         for (i = 0; i < sas->label_defs.index; i++) {
             if (strcmp(name, sas->label_defs.labels[i].name) == 0) {
-                if (call) {
+                if (addr) {
                     *(svm_addr*)(sas->code + there) = sas->label_defs.labels[i].address;
                 }
                 else
@@ -294,8 +294,8 @@ int sas_try_assemble(sas_state* sas, const char* token) {
     }
     for (code = SVM_NOP; code < _SVM_MAX; code++) {
         if (strcmp(svm_code_str[code], dir) == 0) {
-            if (code == SVM_CALL)
-                sas->call = 1;
+            if (code == SVM_CALL || code == SVM_LITA)
+                sas->addr = 1;
             sas->code[sas->here] = code;
             sas->here++;
             return 0;
