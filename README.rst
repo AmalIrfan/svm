@@ -17,8 +17,7 @@ Ops
 +-----------+------------------------------------------------------------------+
 | ``NOP``   | no operation. advances like other ops                            |
 +-----------+------------------------------------------------------------------+
-| ``CALL``  | store current address on return stack, pop the address on stack  |
-|           | and jump to it                                                   |
+| ``CALL X`` | store current address on return stack, and jump to address X    |
 +-----------+------------------------------------------------------------------+
 | ``EXIT``  | pop the return address from return stack and jump to it          |
 +-----------+------------------------------------------------------------------+
@@ -38,8 +37,8 @@ Ops
 +-----------+------------------------------------------------------------------+
 | ``SUB``   | pop two values from stack and push the difference onto stack     |
 +-----------+------------------------------------------------------------------+
-| ``JNZ``   | pop two values from stack, conditional and address, then jump to |
-|           | address if conditional value is not zero                         |
+| ``JNZ X`` | pop condition off the stack and jump to address X if condition   |
+|           | is not zero                                                      |
 +-----------+------------------------------------------------------------------+
 | ``LOAD``  | pop the address on stack and push the value at that address onto |
 |           | stack                                                            |
