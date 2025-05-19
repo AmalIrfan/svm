@@ -23,6 +23,7 @@ typedef struct sas_state {
     sas_label_array label_defs;
     sas_label_array label_uses;
     svm_unit here;
+    FILE* fh;
 } sas_state;
 
 const char* sas_get_token(FILE* fh);
@@ -36,45 +37,80 @@ int sas_make_label_def(sas_state* sas, const char* token);
 int sas_use_label(sas_state* sas, const char* name);
 int sas_resolve_label_uses(sas_state* sas);
 int sas_try_assemble(sas_state* sas, const char* token);
+int sas_assemble(sas_state* sas);
+int sas_disassemble(sas_state* sas);
 
 int main(int argc, const char* argv[]) {
-    const char* token;
     sas_state sas = {0};
-    FILE* fh = 0;
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s input > output\n", argv[0]);
+    int fl = 1;
+    int dis = 0;
+    if (argc == 3) {
+        fl++;
+        if (strcmp(argv[1],"d") == 0)
+            dis = 1;
+    }
+    if (argc != 2 && argc != 3) {
+        fprintf(stderr, "Usage: %s [d] input > output\n", argv[0]);
         return 1;
     }
-    fh = fopen(argv[1], "r");
-    if (!fh) {
-        perror(argv[1]);
+    sas.fh = fopen(argv[fl], "r");
+    if (!sas.fh) {
+        perror(argv[fl]);
         return 1;
     }
+    if (dis == 0)
+        sas_assemble(&sas);
+    else
+        sas_disassemble(&sas);
+    fclose(sas.fh);
+    return 0;
+}
+
+int sas_assemble(sas_state* sas) {
+    const char* token;
     while (1) {
-        token = sas_get_token(fh);
+        token = sas_get_token(sas->fh);
         if (!token)
             break;
         else if (sas_token_is_number(token)) {
-            sas.code[sas.here] = sas_make_number(token);
-            sas.here++;
+            sas->code[sas->here] = sas_make_number(token);
+            sas->here++;
         }
         else if (sas_token_is_label_definition(token)) {
-            if (sas_make_label_def(&sas, token))
+            if (sas_make_label_def(sas, token))
                 return 1;
         }
-        else if (sas_try_assemble(&sas, token) == 0) {
+        else if (sas_try_assemble(sas, token) == 0) {
             /* successfully assembled */
         }
         else { /* assume it is a label */
-            if (sas_use_label(&sas, token))
+            if (sas_use_label(sas, token))
                 return 1;
         }
     }
 
-    if (sas_resolve_label_uses(&sas))
+    if (sas_resolve_label_uses(sas))
         return 1;
 
-    fwrite(sas.code, sizeof(sas.code[0]), sas.here, stdout);
+    fwrite(sas->code, sizeof(sas->code[0]), sas->here, stdout);
+    return 0;
+}
+
+int sas_disassemble(sas_state* sas) {
+    svm_code ins = 0;
+    svm_unit val = 0;
+    while (!feof(sas->fh)) {
+        fread(&ins, sizeof(ins), 1, sas->fh);
+        if (ins >= SVM_NOP && ins < _SVM_MAX)
+            fprintf(stdout, "    %s", svm_code_str[ins]);
+        else
+            fprintf(stdout, "    error: %d\n", ins);
+        if (ins == SVM_LIT) {
+            fread(&val, sizeof(val), 1, sas->fh);
+            fprintf(stdout, " %d", val);
+        }
+        putc('\n', stdout);
+    }
     return 0;
 }
 
