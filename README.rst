@@ -7,9 +7,9 @@ like `popa <https://github.com/AmalIrfan/popa>`_.
 Spec aim:
 ---------
 - Memory: 65536 (0000 to FFFF)
-- Data stack: 0000 to 2FFF
-- Return stack: 3000 to 4FFF
-- General: 5000 to FFFF
+- Data stack: 0000 to 00FF
+- Return stack: 0100 to 01FF
+- General: 0200 to FFFF
 
 Ops
 ^^^
@@ -35,10 +35,15 @@ Ops
 +-----------+------------------------------------------------------------------+
 | ``WRITE`` | pop the value (character) on the stack and write it to output    |
 +-----------+------------------------------------------------------------------+
-| ``SUB``   | pop two values from stack and push the difference onto stack     |
+| ``SUB``   | pop two values from stack and push the result onto stack         |
+| ``ADD``   |                                                                  |
+| ``...``   |                                                                  |
+| ``EQ``    |                                                                  |
+| ``LT``    |                                                                  |
+| ``...``   |                                                                  |
 +-----------+------------------------------------------------------------------+
-| ``JNZ X`` | pop condition off the stack and jump to address X if condition   |
-|           | is not zero                                                      |
+| ``JNZ X`` | pop condition off the stack and jump to offset X if condition    |
+|           | is not zero. offset is added to the address of end of operand    |
 +-----------+------------------------------------------------------------------+
 | ``LOAD``  | pop the address on stack and push the value at that address onto |
 |           | stack                                                            |

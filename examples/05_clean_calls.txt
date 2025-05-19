@@ -1,0 +1,15 @@
+  call echo
+  -1
+echo:
+  read
+  dup
+  lit 0
+  lte
+  jnz end
+  write
+  lit 1
+  jnz echo
+end:
+  lit 10
+  write
+  exit

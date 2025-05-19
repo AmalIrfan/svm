@@ -1,5 +1,4 @@
-CC=c89
-CFLAGS=-g -Wall -Wextra -Werror -pedantic
+CFLAGS=-std=gnu99 -g -Wall -Wextra -Werror -pedantic
 CFLAGS+=-I.
 
 all: build/main build/sas
