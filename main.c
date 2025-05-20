@@ -9,12 +9,19 @@ int main(int argc, char *argv[]) {
     svm_state svm;
     svm_unit code[SVM_CODE_MAX] = {0};
     int n = 0;
+    bool debug = false;
     FILE* fh = 0;
 
     svm_init(&svm);
 
+    if (argc == 3) {
+        debug = 1;
+        argc--;
+        argv[1] = argv[2];
+    }
+
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s input\n", argv[0]);
+        fprintf(stderr, "Usage: %s [d] input\n", argv[0]);
         return 1;
     }
 
@@ -26,7 +33,7 @@ int main(int argc, char *argv[]) {
 
     n = fread(code, sizeof(code[0]), SVM_CODE_MAX, fh);
     fclose(fh);
-    svm_load(&svm, code, n);
+    svm_load(&svm, code, n, debug);
 
     svm_execute(&svm);
 

@@ -1,6 +1,8 @@
 #ifndef _SVM_H_
 #define _SVM_H_
 #include <stdint.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 typedef int8_t svm_unit;
 typedef uint16_t svm_addr;
@@ -12,16 +14,20 @@ typedef uint16_t svm_addr;
 #define DSTACK_SIZE  (RSTACK_OFFSET  - DSTACK_OFFSET)
 #define RSTACK_SIZE  (GENERAL_OFFSET - RSTACK_OFFSET)
 #define GENERAL_SIZE (MEMORY_SIZE    - GENERAL_OFFSET)
+#define PORT_IN   0xFFFD
+#define PORT_OUT  0xFFFE
+#define PORT_DATA 0xFFFF
 
 typedef struct svm_state {
     svm_unit memory[MEMORY_SIZE];
     svm_addr pc;
     svm_addr dp;
     svm_addr rp;
+    bool debug;
 } svm_state;
 
 void svm_init(svm_state* svm);
-void svm_load(svm_state* svm, const svm_unit* code, const svm_addr size);
+void svm_load(svm_state* svm, const svm_unit* code, const svm_addr size, bool debug);
 void svm_execute(svm_state* svm);
 
 svm_unit svm_unit_here(svm_state* svm);
@@ -38,6 +44,7 @@ void     svm_dstack_set_top(svm_state* svm, svm_unit value);
 void     svm_rstack_push(svm_state* svm, svm_addr value);
 svm_addr svm_rstack_pop(svm_state* svm);
 void     svm_jump(svm_state* svm, svm_addr there);
+void     svm_check_if_port(svm_state* svm, svm_addr there);
 
 typedef enum svm_code {
     SVM_NOP,
@@ -92,20 +99,20 @@ void svm_init(svm_state* svm) {
     memset(svm, 0, sizeof(*svm));
 }
 
-void svm_load(svm_state* svm, const svm_unit* code, const svm_addr size) {
+void svm_load(svm_state* svm, const svm_unit* code, const svm_addr size, bool debug) {
     if (size > GENERAL_SIZE) {
         printf("CODE OVERFLOW: %d UNITS\n", size - GENERAL_SIZE);
         return;
     }
     memcpy(&svm->memory[GENERAL_OFFSET], code, size * sizeof(*code));
+    svm->debug = debug;
 }
 
 void svm_execute(svm_state* svm) {
     svm_code code = SVM_NOP;
     while (1) {
         code = (svm_code)svm_unit_here(svm);
-#if 1
-        {
+        if (svm->debug) {
             int i = 0;
             fprintf(stderr, "%3d %5s", svm->pc, ((int)code > 0 ? svm_code_str[code] : ""));
             if (code == SVM_LIT || code == SVM_BNZ) {
@@ -126,8 +133,10 @@ void svm_execute(svm_state* svm) {
                         (i + sizeof(svm_addr)/sizeof(svm_unit) >= svm->rp ? "" : ", "));
             }
             fputs("]\n", stderr);
+            getchar();
+            puts("\033[2A");
+            fflush(stdout);
         }
-#endif
         switch (code) {
         case SVM_NOP:
              svm_advance(svm);
@@ -205,7 +214,7 @@ void svm_execute(svm_state* svm) {
             {
                 svm_addr addr_h = svm_dstack_pop(svm);
                 svm_addr addr_l = svm_dstack_pop(svm);
-                svm_addr addr = addr_h << 8 | addr_l;
+                svm_addr addr = (addr_h & 0xFF) << 8 | (addr_l & 0xFF);
                 svm_rstack_push(svm, addr);
             }
             break;
@@ -343,7 +352,7 @@ void svm_execute(svm_state* svm) {
             {
                 svm_addr addr_h = svm_dstack_pop(svm);
                 svm_addr addr_l = svm_dstack_pop(svm);
-                svm_addr there = addr_h << 8 | addr_l;
+                svm_addr there = (addr_h & 0xFF) << 8 | (addr_l & 0xFF);
                 svm_store_there(svm, there, svm_dstack_pop(svm));
             }
             break;
@@ -352,7 +361,8 @@ void svm_execute(svm_state* svm) {
             {
                 svm_addr addr_h = svm_dstack_pop(svm);
                 svm_addr addr_l = svm_dstack_pop(svm);
-                svm_addr there = addr_h << 8 | addr_l;
+                svm_addr there = (addr_h & 0xFF) << 8 | (addr_l & 0xFF);
+                svm_check_if_port(svm, there);
                 svm_dstack_push(svm, svm_unit_there(svm, there));
             }
             break;
@@ -439,6 +449,17 @@ svm_addr svm_rstack_pop(svm_state* svm) {
 
 void svm_jump(svm_state* svm, svm_addr there) {
      svm->pc = there;
+}
+
+void svm_check_if_port(svm_state* svm, svm_addr there) {
+    switch (there + GENERAL_OFFSET) {
+        case PORT_IN:
+            svm->memory[PORT_DATA] = getc(stdin);
+            break;
+        case PORT_OUT:
+            putc(svm->memory[PORT_DATA], stdout);
+            break;
+    }
 }
 
 #endif /* SVM_IMPLEMENTATION */

@@ -1,0 +1,38 @@
+  cal entry
+  hlt
+
+entry:
+  lit 10    ; 10
+
+again:
+  cal getc  ; 10 c
+  dup       ; 10 c c
+  cal putc  ; 10 c
+  ovr       ; 10 c 10
+  sub       ; 10 c-10
+  bnz again ; 10
+
+  drp
+  ret
+
+
+PORT_IN= 65021
+PORT_OUT= 65022
+PORT_DATA= 65023
+
+
+getc:
+  lad PORT_IN ; PORT_IN
+  fch         ; 0
+  drp
+  lad PORT_DATA ; PORT_DATA
+  fch           ; c
+  ret
+
+putc:
+  lad PORT_DATA ; c PORT_DATA
+  put
+  lad PORT_OUT ; PORT_OUT
+  fch          ; 0
+  drp
+  ret
