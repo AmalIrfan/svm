@@ -1,10 +1,13 @@
-  nop
   cal entry
   hlt
 
-count: 9
+count= 64767
 
 entry:
+  lit 10     ; 10
+  lad count  ; 10 cl ch
+  put
+
   lit 1      ; 1
   lad count  ; 1 cl ch
   ovr        ; 1 cl ch cl

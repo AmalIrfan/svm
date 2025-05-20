@@ -6,23 +6,24 @@
 #define SVM_IMPLEMENTATION
 #include "svm.h"
 
-#define SAS_MAX_LABELS 20
+#define SAS_MAX_SYMBOLS 20
+#define SAS_TOKEN 20
 
-typedef struct sas_label {
-    char name[20];
+typedef struct sas_symbol {
+    char name[SAS_TOKEN];
     svm_addr address;
-    int addr;
-} sas_label;
+    int addr; /* >0xFF */
+} sas_symbol;
 
-typedef struct sas_label_array {
-    sas_label labels[SAS_MAX_LABELS];
+typedef struct sas_symbol_array {
+    sas_symbol symbols[SAS_MAX_SYMBOLS];
     int index;
-} sas_label_array;
+} sas_symbol_array;
 
 typedef struct sas_state {
     svm_unit code[200];
-    sas_label_array label_defs;
-    sas_label_array label_uses;
+    sas_symbol_array symbol_defs;
+    sas_symbol_array symbol_uses;
     svm_addr here;
     int addr;
     FILE* fh;
@@ -32,12 +33,12 @@ const char* sas_get_token(FILE* fh);
 char sas_comment(FILE* fh);
 int sas_token_is_number(const char* token);
 int sas_make_number(const char* token);
-int sas_token_is_label(sas_state* sas, const char* token, int labelindex);
-int sas_token_is_label_definition(const char* token);
-sas_label sas_make_label(const char* name, svm_addr here, int suffix, int addr);
-int sas_make_label_def(sas_state* sas, const char* token);
-int sas_use_label(sas_state* sas, const char* name);
-int sas_resolve_label_uses(sas_state* sas);
+int sas_token_is_symbol(sas_state* sas, const char* token, int symbolindex);
+int sas_token_is_symbol_definition(const char* token);
+sas_symbol sas_make_symbol(const char* name, svm_addr here, int suffix, int addr);
+int sas_make_symbol_def(sas_state* sas, const char* token);
+int sas_use_symbol(sas_state* sas, const char* name);
+int sas_resolve_symbol_uses(sas_state* sas);
 int sas_try_assemble(sas_state* sas, const char* token);
 int sas_assemble(sas_state* sas);
 int sas_disassemble(sas_state* sas);
@@ -88,20 +89,20 @@ int sas_assemble(sas_state* sas) {
                 return 1;
             }
         }
-        else if (sas_token_is_label_definition(token)) {
-            if (sas_make_label_def(sas, token))
+        else if (sas_token_is_symbol_definition(token)) {
+            if (sas_make_symbol_def(sas, token))
                 return 1;
         }
         else if (sas_try_assemble(sas, token) == 0) {
             /* successfully assembled */
         }
-        else { /* assume it is a label */
-            if (sas_use_label(sas, token))
+        else { /* assume it is a symbol */
+            if (sas_use_symbol(sas, token))
                 return 1;
         }
     }
 
-    if (sas_resolve_label_uses(sas))
+    if (sas_resolve_symbol_uses(sas))
         return 1;
 
     fwrite(sas->code, sizeof(sas->code[0]), sas->here, stdout);
@@ -132,7 +133,7 @@ int sas_disassemble(sas_state* sas) {
 }
 
 const char* sas_get_token(FILE* fh) {
-    static char buf[20];
+    static char buf[SAS_TOKEN];
     int i = 0;
     char ch = getc(fh);
     while (isspace(ch)) {
@@ -198,39 +199,63 @@ int sas_make_number(const char* token) {
     return n;
 }
 
-int sas_label_exists(sas_state* sas, const char* name) {
+int sas_symbol_exists(sas_state* sas, const char* name) {
     int i = 0;
-    for (i = 0; i < sas->label_defs.index; i++) {
-        if (strcasecmp(name, sas->label_defs.labels[i].name) == 0)
+    for (i = 0; i < sas->symbol_defs.index; i++) {
+        if (strcasecmp(name, sas->symbol_defs.symbols[i].name) == 0)
             return 1;
     }
     return 0;
 }
 
-int sas_token_is_label_definition(const char* token) {
+int sas_token_is_symbol_definition(const char* token) {
     int n = strlen(token);
     if (n > 1 && token[n - 1] == ':')
         return 1;
+    if (n > 1 && token[n - 1] == '=')
+        return 1;
     return 0;
 }
 
-int sas_make_label_def(sas_state* sas, const char* token) {
-    sas_label l = sas_make_label(token, sas->here, 1, 0);
-    if (sas->label_defs.index >= SAS_MAX_LABELS) {
-        fprintf(stderr, "Error: too many label defs\n");
+int sas_make_symbol_def(sas_state* sas, const char* token) {
+    sas_symbol l = {0};
+    int n = strlen(token);
+    if (sas->symbol_defs.index >= SAS_MAX_SYMBOLS) {
+        fprintf(stderr, "Error: too many symbol defs\n");
         return 1;
     }
-    if (sas_label_exists(sas, l.name)) {
-        fprintf(stderr, "Error: label redefintion `%s`\n", l.name);
+    if (sas_symbol_exists(sas, l.name)) {
+        fprintf(stderr, "Error: symbol redefintion `%s`\n", l.name);
         return 1;
     }
-    sas->label_defs.labels[sas->label_defs.index] = l;
-    sas->label_defs.index++;
+    if (token[n - 1] == ':')
+        l = sas_make_symbol(token, sas->here, 1, 0);
+    else if (token[n - 1] == '=') {
+        l = sas_make_symbol(token, 0, 1, 0);
+        token = sas_get_token(sas->fh);
+        if (!sas_token_is_number(token)) {
+            fprintf(stderr, "Error: symbol must be followed by a number: `%s %s`\n", l.name, token);
+            return 1;
+        }
+        n = sas_make_number(token);
+        if ((unsigned int)n <= 0xFF) {
+            l.address = n;
+            l.addr = 0;
+        } else if ((unsigned int)n <= 0xFFFF) {
+            l.address = n;
+            l.addr = 1;
+        } else {
+            fprintf(stderr, "Error: number out of range: `%x`\n", n);
+            return 1;
+        }
+    }
+    sas->symbol_defs.symbols[sas->symbol_defs.index] = l;
+    sas->symbol_defs.index++;
     return 0;
 }
 
-sas_label sas_make_label(const char* name, svm_addr here, int suffix, int addr) {
-    sas_label l = {0};
+sas_symbol sas_make_symbol(const char* name, svm_addr here, int suffix, int addr) {
+    sas_symbol l = {0};
     int n = strlen(name) - suffix;
     memcpy(l.name, name, n);
     l.name[n] = 0;
@@ -239,13 +264,13 @@ sas_label sas_make_label(const char* name, svm_addr here, int suffix, int addr) 
     return l;
 }
 
-int sas_use_label(sas_state* sas, const char* name) {
-    if (sas->label_uses.index >= SAS_MAX_LABELS) {
-        fprintf(stderr, "Error: too many label uses\n");
+int sas_use_symbol(sas_state* sas, const char* name) {
+    if (sas->symbol_uses.index >= SAS_MAX_SYMBOLS) {
+        fprintf(stderr, "Error: too many symbol uses\n");
         return 1;
     }
-    sas->label_uses.labels[sas->label_uses.index] = sas_make_label(name, sas->here, 0, sas->addr);
-    sas->label_uses.index++;
+    sas->symbol_uses.symbols[sas->symbol_uses.index] = sas_make_symbol(name, sas->here, 0, sas->addr);
+    sas->symbol_uses.index++;
     if (sas->addr) {
         *(svm_addr*)(sas->code + sas->here) = 0;
         sas->here = sas->here + sizeof(svm_addr) / sizeof(svm_unit);
@@ -258,26 +283,26 @@ int sas_use_label(sas_state* sas, const char* name) {
     return 0;
 }
 
-int sas_resolve_label_uses(sas_state* sas) {
+int sas_resolve_symbol_uses(sas_state* sas) {
     int i = 0;
     int j = 0;
     const char *name = NULL;
     svm_addr there = 0;
     int addr = 0;
     int matches = 0;
-    for (j = 0; j < sas->label_uses.index; j++) {
+    for (j = 0; j < sas->symbol_uses.index; j++) {
         matches = 0;
-        name = sas->label_uses.labels[j].name;
-        there = sas->label_uses.labels[j].address;
-        addr = sas->label_uses.labels[j].addr;
+        name = sas->symbol_uses.symbols[j].name;
+        there = sas->symbol_uses.symbols[j].address;
+        addr = sas->symbol_uses.symbols[j].addr;
         /* set uses to defs as the match */
-        for (i = 0; i < sas->label_defs.index; i++) {
-            if (strcmp(name, sas->label_defs.labels[i].name) == 0) {
+        for (i = 0; i < sas->symbol_defs.index; i++) {
+            if (strcmp(name, sas->symbol_defs.symbols[i].name) == 0) {
                 if (addr) {
-                    *(svm_addr*)(sas->code + there) = sas->label_defs.labels[i].address;
+                    *(svm_addr*)(sas->code + there) = sas->symbol_defs.symbols[i].address;
                 }
                 else
-                    sas->code[there] = sas->label_defs.labels[i].address - there - sizeof(svm_unit);
+                    sas->code[there] = sas->symbol_defs.symbols[i].address - there - sizeof(svm_unit);
                 matches++;
             }
         }
@@ -290,11 +315,12 @@ int sas_resolve_label_uses(sas_state* sas) {
 }
 
 int sas_try_assemble(sas_state* sas, const char* token) {
-    static char dir[SAS_MAX_LABELS];
+    static char dir[SAS_TOKEN];
     int i = 0;
     svm_code code = SVM_NOP;
-    strcpy(dir, token);
-    for (i = 0; i < (int)strlen(dir); i++) {
+    int n = strlen(token);
+    memcpy(dir, token, n + 1);
+    for (i = 0; i < n; i++) {
         dir[i] = toupper(dir[i]);
     }
     for (code = SVM_NOP; code < _SVM_MAX; code++) {
