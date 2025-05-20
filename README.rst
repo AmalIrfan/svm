@@ -10,6 +10,7 @@ Spec aim:
 - Data stack: 0000 to 00FF
 - Return stack: 0100 to 01FF
 - General: 0200 to FFFF
+  - Ports: FFFD to FFFF
 
 Ops
 ^^^
@@ -49,6 +50,16 @@ Ops
 +---------+--------------------------------------------------------------------+
 | ``OVR`` | dup value next to top of the data stack, produces                  |
 +---------+--------------------------------------------------------------------+
+
+Ports
+^^^^^
+
+- Input:  FFFD - 0300
+- Output: FFFC - 0300
+- Data:   FFFF - 0300
+
+On fetch from input port, data port is filled with input.
+Similarly, on fetch from output port, data port is written to output.
 
 Examples
 ^^^^^^^^
