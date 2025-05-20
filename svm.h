@@ -135,9 +135,6 @@ void svm_execute(svm_state* svm) {
                         (i + sizeof(svm_addr)/sizeof(svm_unit) >= svm->rp ? "" : ", "));
             }
             fputs("]\n", stderr);
-            getchar();
-            puts("\033[2A");
-            fflush(stdout);
         }
         switch (code) {
         case SVM_NOP:
