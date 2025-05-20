@@ -117,11 +117,11 @@ int sas_disassemble(sas_state* sas) {
             fprintf(stdout, "    %s", svm_code_str[ins]);
         else
             fprintf(stdout, "    error: %hhd\n", ins);
-        if (ins == SVM_LIT || ins == SVM_JNZ) {
+        if (ins == SVM_LIT || ins == SVM_BNZ || ins == SVM_BNG) {
             fread(&val, sizeof(svm_unit), 1, sas->fh);
             fprintf(stdout, " %hhd", val);
         }
-        if (ins == SVM_CALL || ins == SVM_LITA) {
+        if (ins == SVM_CAL || ins == SVM_LAD) {
             fread(&val, sizeof(svm_addr), 1, sas->fh);
             fprintf(stdout, " %hd", val);
         }
@@ -167,6 +167,8 @@ char sas_comment(FILE* fh) {
 int sas_token_is_number(const char* token) {
     if (*token == '-')
         token++;
+    else if (*token == '+')
+        token++;
     if (!*token)
         return 0;
     while (*token) {
@@ -182,6 +184,9 @@ int sas_make_number(const char* token) {
     int neg = 0;
     if (*token == '-') {
         neg = 1;
+        token++;
+    } else if (*token == '+') {
+        neg = 0;
         token++;
     }
     while (*token) {
@@ -294,7 +299,7 @@ int sas_try_assemble(sas_state* sas, const char* token) {
     }
     for (code = SVM_NOP; code < _SVM_MAX; code++) {
         if (strcmp(svm_code_str[code], dir) == 0) {
-            if (code == SVM_CALL || code == SVM_LITA)
+            if (code == SVM_CAL || code == SVM_LAD)
                 sas->addr = 1;
             sas->code[sas->here] = code;
             sas->here++;

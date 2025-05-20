@@ -1,0 +1,34 @@
+  nop
+  cal entry
+  hlt
+
+count: 9
+
+entry:
+  lit 1      ; 1
+  lad count  ; 1 cl ch
+  ovr        ; 1 cl ch cl
+  ovr        ; 1 cl ch cl ch
+  psh        ; 1 cl ch
+  fch        ; 1 c
+
+loop:
+  ovr  ; 1 c 1
+  sub  ; 1 c-1
+
+  dup  ; 1 c' c'
+  pop  ; 1 c' c' cl ch
+  ovr  ; 1 c' c' cl ch cl
+  ovr  ; 1 c' c' cl ch cl ch
+  psh  ; 1 c' c' cl ch
+  put  ; 1 c'
+
+  dup       ; 1 c' c'
+  bnz loop  ; 1 c'
+
+  pop  ; 1 c' cl ch
+  drp  ; 1 c' cl
+  drp  ; 1 c'
+  drp  ;
+  ret
+

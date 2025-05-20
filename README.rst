@@ -1,6 +1,4 @@
-SVM (Simple Virtual Machine)
-============================
-
+SVM (Simple Virtual Machine) ============================
 A simple virtual machine aimed to be a base for educational programming systems
 like `popa <https://github.com/AmalIrfan/popa>`_.
 
@@ -29,6 +27,10 @@ Ops
 +---------+--------------------------------------------------------------------+
 | ``BNG`` | branch if top of data stack is less than zero, consumes            |
 +---------+--------------------------------------------------------------------+
+| ``ADD`` | add values at top of the data stack, consumes                      |
++---------+--------------------------------------------------------------------+
+| ``SUB`` | sub values at top of the data stack, consumes                      |
++---------+--------------------------------------------------------------------+
 | ``LIT B`` | load byte from code                                              |
 +---------+--------------------------------------------------------------------+
 | ``LAD A`` | load address from code                                           |
@@ -40,6 +42,12 @@ Ops
 | ``POP`` | pop top of return stack and push it to top of data stack, produces |
 +---------+--------------------------------------------------------------------+
 | ``PSH`` | pop top of data stack and push it to top of return stack, consumes |
++---------+--------------------------------------------------------------------+
+| ``DUP`` | dup value at top of the data stack, produces                       |
++---------+--------------------------------------------------------------------+
+| ``DRP`` | drop value at top of the data stack, consumes                      |
++---------+--------------------------------------------------------------------+
+| ``OVR`` | dup value next to top of the data stack, produces                  |
 +---------+--------------------------------------------------------------------+
 
 Examples

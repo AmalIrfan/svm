@@ -2,8 +2,8 @@
 #define _SVM_H_
 #include <stdint.h>
 
-    typedef int8_t svm_unit;
-    typedef uint16_t svm_addr;
+typedef int8_t svm_unit;
+typedef uint16_t svm_addr;
 
 #define MEMORY_SIZE 0x10000
 #define DSTACK_OFFSET  0x0000
@@ -13,140 +13,112 @@
 #define RSTACK_SIZE  (GENERAL_OFFSET - RSTACK_OFFSET)
 #define GENERAL_SIZE (MEMORY_SIZE    - GENERAL_OFFSET)
 
-    typedef struct svm_state {
-        svm_unit memory[MEMORY_SIZE];
-        svm_addr pc;
-        svm_addr dp;
-        svm_addr rp;
-    } svm_state;
+typedef struct svm_state {
+    svm_unit memory[MEMORY_SIZE];
+    svm_addr pc;
+    svm_addr dp;
+    svm_addr rp;
+} svm_state;
 
-    void svm_init(svm_state* svm);
-    void svm_load(svm_state* svm, const svm_unit* code, const svm_addr size);
-    void svm_execute(svm_state* svm);
+void svm_init(svm_state* svm);
+void svm_load(svm_state* svm, const svm_unit* code, const svm_addr size);
+void svm_execute(svm_state* svm);
 
-    svm_unit svm_unit_here(svm_state* svm);
-    svm_addr svm_addr_here(svm_state* svm);
-    svm_unit svm_unit_there(svm_state* svm, svm_addr there);
-    svm_addr svm_addr_there(svm_state* svm, svm_addr there);
-    void svm_store_there(svm_state* svm, svm_addr there, svm_unit value);
-    void     svm_advance(svm_state* svm);
-    void     svm_advance_addr(svm_state* svm);
-    void     svm_dstack_push(svm_state* svm, svm_unit value);
-    svm_unit svm_dstack_pop(svm_state* svm);
-    svm_unit svm_dstack_view(svm_state* svm);
-    void     svm_dstack_set_top(svm_state* svm, svm_unit value);
-    void     svm_rstack_push(svm_state* svm, svm_addr value);
-    svm_addr svm_rstack_pop(svm_state* svm);
-    void     svm_jump(svm_state* svm, svm_addr there);
+svm_unit svm_unit_here(svm_state* svm);
+svm_addr svm_addr_here(svm_state* svm);
+svm_unit svm_unit_there(svm_state* svm, svm_addr there);
+svm_addr svm_addr_there(svm_state* svm, svm_addr there);
+void svm_store_there(svm_state* svm, svm_addr there, svm_unit value);
+void     svm_advance(svm_state* svm);
+void     svm_advance_addr(svm_state* svm);
+void     svm_dstack_push(svm_state* svm, svm_unit value);
+svm_unit svm_dstack_pop(svm_state* svm);
+svm_unit svm_dstack_view(svm_state* svm);
+void     svm_dstack_set_top(svm_state* svm, svm_unit value);
+void     svm_rstack_push(svm_state* svm, svm_addr value);
+svm_addr svm_rstack_pop(svm_state* svm);
+void     svm_jump(svm_state* svm, svm_addr there);
 
-    typedef enum svm_code {
-        SVM_NOP,
-        SVM_LIT,
-        SVM_LITA,
-        SVM_CALL,
-        SVM_EXIT,
-        SVM_READ,
-        SVM_WRITE,
-        SVM_DUP,
-        SVM_DROP,
-        SVM_SWAP,
-        SVM_OVER,
-        SVM_ROT,
-        SVM_RPUSH,
-        SVM_RPOP,
-        SVM_SUB,
-        SVM_ADD,
-        SVM_MUL,
-        SVM_DIV,
-        SVM_LT,
-        SVM_EQ,
-        SVM_GT,
-        SVM_LTE,
-        SVM_NEQ,
-        SVM_GTE,
-        SVM_NOT,
-        SVM_AND,
-        SVM_OR,
-        SVM_XOR,
-        SVM_JNZ,
-        SVM_STORE,
-        SVM_LOAD,
-        _SVM_MAX
-    } svm_code;
+typedef enum svm_code {
+    SVM_NOP,
+    SVM_HLT,
+    SVM_CAL,
+    SVM_RET,
+    SVM_BNZ,
+    SVM_BNG,
+    SVM_ADD,
+    SVM_SUB,
+    SVM_LIT,
+    SVM_LAD,
+    SVM_FCH,
+    SVM_PUT,
+    SVM_POP,
+    SVM_PSH,
+    SVM_DUP,
+    SVM_DRP,
+    SVM_OVR,
+    _SVM_MAX
+} svm_code;
 
-    const char* svm_code_str[] = {
-        "NOP",
-        "LIT",
-        "LITA",
-        "CALL",
-        "EXIT",
-        "READ",
-        "WRITE",
-        "DUP",
-        "DROP",
-        "SWAP",
-        "OVER",
-        "ROT",
-        "RPUSH",
-        "RPOP",
-        "SUB",
-        "ADD",
-        "MUL",
-        "DIV",
-        "LT",
-        "EQ",
-        "GT",
-        "LTE",
-        "NEQ",
-        "GTE",
-        "NOT",
-        "AND",
-        "OR",
-        "XOR",
-        "JNZ",
-        "STORE",
-        "LOAD"
-    };
+const char* svm_code_str[] = {
+    "NOP",
+    "HLT",
+    "CAL",
+    "RET",
+    "BNZ",
+    "BNG",
+    "ADD",
+    "SUB",
+    "LIT",
+    "LAD",
+    "FCH",
+    "PUT",
+    "POP",
+    "PSH",
+    "DUP",
+    "DRP",
+    "OVR"
+};
 
 #ifdef SVM_IMPLEMENTATION
 #include <stdio.h>
 #include <string.h>
 
-    void svm_init(svm_state* svm) {
-        printf("MEMORY_SIZE    %5X\n", MEMORY_SIZE);
-        printf("DSTACK_OFFSET  %5X DSTACK_SIZE  %5X\n", DSTACK_OFFSET, DSTACK_SIZE);
-        printf("RSTACK_OFFSET  %5X RSTACK_SIZE  %5X\n", RSTACK_OFFSET, RSTACK_SIZE);
-        printf("GENERAL_OFFSET %5X GENERAL_SIZE %5X\n", GENERAL_OFFSET, GENERAL_SIZE);
-        memset(svm, 0, sizeof(*svm));
-    }
+void svm_init(svm_state* svm) {
+    printf("MEMORY_SIZE    %5X\n", MEMORY_SIZE);
+    printf("DSTACK_OFFSET  %5X DSTACK_SIZE  %5X\n", DSTACK_OFFSET, DSTACK_SIZE);
+    printf("RSTACK_OFFSET  %5X RSTACK_SIZE  %5X\n", RSTACK_OFFSET, RSTACK_SIZE);
+    printf("GENERAL_OFFSET %5X GENERAL_SIZE %5X\n", GENERAL_OFFSET, GENERAL_SIZE);
+    memset(svm, 0, sizeof(*svm));
+}
 
-    void svm_load(svm_state* svm, const svm_unit* code, const svm_addr size) {
-        if (size > GENERAL_SIZE) {
-            printf("CODE OVERFLOW: %d UNITS\n", size - GENERAL_SIZE);
-            return;
-        }
-        memcpy(&svm->memory[GENERAL_OFFSET], code, size * sizeof(*code));
+void svm_load(svm_state* svm, const svm_unit* code, const svm_addr size) {
+    if (size > GENERAL_SIZE) {
+        printf("CODE OVERFLOW: %d UNITS\n", size - GENERAL_SIZE);
+        return;
     }
+    memcpy(&svm->memory[GENERAL_OFFSET], code, size * sizeof(*code));
+}
 
-    void svm_execute(svm_state* svm) {
-        svm_code code = SVM_NOP;
-        while (1) {
-            code = (svm_code)svm_unit_here(svm);
+void svm_execute(svm_state* svm) {
+    svm_code code = SVM_NOP;
+    while (1) {
+        code = (svm_code)svm_unit_here(svm);
 #if 1
-            {
-                int i = 0;
-                fprintf(stderr, "%3d %5s", svm->pc, ((int)code > 0 ? svm_code_str[code] : ""));
-                if (code == SVM_LIT || code == SVM_JNZ) {
-                    fprintf(stderr, " %3hhd  ", svm_unit_there(svm, svm->pc + 1));
-                } else if (code == SVM_CALL || code == SVM_LITA) {
-                    fprintf(stderr, " %4hu ", svm_addr_there(svm, svm->pc + 1));
-                } else {
-                    fputs("      ", stderr);
-                }
-                putc('[', stderr);
-                for (i = 0; i < svm->dp; i++) {
-                    fprintf(stderr, "%hhd%s", svm->memory[DSTACK_OFFSET + i],
-                            (i + 1 >= svm->dp ? "" : ", "));
+        {
+            int i = 0;
+            fprintf(stderr, "%3d %5s", svm->pc, ((int)code > 0 ? svm_code_str[code] : ""));
+            if (code == SVM_LIT || code == SVM_BNZ) {
+                fprintf(stderr, " %3hhd  ", svm_unit_there(svm, svm->pc + 1));
+            } else if (code == SVM_CAL || code == SVM_LAD) {
+                fprintf(stderr, " %4hu ", svm_addr_there(svm, svm->pc + 1));
+            } else {
+                fputs("      ", stderr);
+            }
+            putc('[', stderr);
+            for (i = 0; i < svm->dp; i++) {
+                fprintf(stderr, "%hhd%s", svm->memory[DSTACK_OFFSET + i],
+                        (i + 1 >= svm->dp ? "" : ", "));
             }
             fputs("] r[", stderr);
             for (i = 0; i < svm->rp; i+=sizeof(svm_addr)/sizeof(svm_unit)) {
@@ -165,7 +137,7 @@
             svm_dstack_push(svm, svm_unit_here(svm));
             svm_advance(svm);
             break;
-        case SVM_LITA:
+        case SVM_LAD:
             svm_advance(svm);
             {
                 svm_addr addr = svm_addr_here(svm);
@@ -174,7 +146,7 @@
             }
             svm_advance_addr(svm);
             break;
-        case SVM_CALL:
+        case SVM_CAL:
             svm_advance(svm);
             {
                 svm_addr there = svm_addr_here(svm);
@@ -183,26 +155,19 @@
                 svm_jump(svm, there);
             }
             break;
-        case SVM_EXIT:
+        case SVM_RET:
             svm_advance(svm);
             svm_jump(svm, svm_rstack_pop(svm));
-            break;
-        case SVM_READ:
-            svm_advance(svm);
-            svm_dstack_push(svm, getc(stdin));
-            break;
-        case SVM_WRITE:
-            svm_advance(svm);
-            putc(svm_dstack_pop(svm), stdout);
             break;
         case SVM_DUP:
             svm_advance(svm);
             svm_dstack_push(svm, svm_dstack_view(svm));
             break;
-        case SVM_DROP:
+        case SVM_DRP:
             svm_advance(svm);
             svm_dstack_pop(svm);
             break;
+#if 0
         case SVM_SWAP:
             svm_advance(svm);
             {
@@ -212,7 +177,8 @@
                 svm_dstack_push(svm, over);
             }
             break;
-        case SVM_OVER:
+#endif
+        case SVM_OVR:
             svm_advance(svm);
             {
                 svm_unit top = svm_dstack_pop(svm);
@@ -221,6 +187,7 @@
                 svm_dstack_push(svm, over);
             }
             break;
+#if 0
         case SVM_ROT:
             svm_advance(svm);
             {
@@ -232,13 +199,23 @@
                 svm_dstack_push(svm, back);
             }
             break;
-        case SVM_RPUSH:
+#endif
+        case SVM_PSH:
             svm_advance(svm);
-            svm_rstack_push(svm, svm_dstack_pop(svm));
+            {
+                svm_addr addr_h = svm_dstack_pop(svm);
+                svm_addr addr_l = svm_dstack_pop(svm);
+                svm_addr addr = addr_h << 8 | addr_l;
+                svm_rstack_push(svm, addr);
+            }
             break;
-        case SVM_RPOP:
+        case SVM_POP:
             svm_advance(svm);
-            svm_dstack_push(svm, svm_rstack_pop(svm));
+            {
+                svm_addr addr = svm_rstack_pop(svm);
+                svm_dstack_push(svm, addr & 0xFF);
+                svm_dstack_push(svm, addr >> 8);
+            }
             break;
         case SVM_SUB:
             svm_advance(svm);
@@ -254,6 +231,7 @@
                 svm_dstack_set_top(svm, svm_dstack_view(svm) + top);
             }
             break;
+#if 0
         case SVM_MUL:
             svm_advance(svm);
             {
@@ -339,7 +317,18 @@
                 svm_dstack_set_top(svm, svm_dstack_view(svm) ^ top);
             }
             break;
-        case SVM_JNZ:
+#endif
+        case SVM_BNG:
+            svm_advance(svm);
+            {
+                svm_unit offset = svm_unit_here(svm);
+                svm_advance(svm);
+                if ((int8_t)svm_dstack_pop(svm) < 0) {
+                        svm_jump(svm, svm->pc + offset);
+                }
+            }
+            break;
+        case SVM_BNZ:
             svm_advance(svm);
             {
                 svm_unit offset = svm_unit_here(svm);
@@ -349,7 +338,7 @@
                 }
             }
             break;
-        case SVM_STORE:
+        case SVM_PUT:
             svm_advance(svm);
             {
                 svm_addr addr_h = svm_dstack_pop(svm);
@@ -358,7 +347,7 @@
                 svm_store_there(svm, there, svm_dstack_pop(svm));
             }
             break;
-        case SVM_LOAD:
+        case SVM_FCH:
             svm_advance(svm);
             {
                 svm_addr addr_h = svm_dstack_pop(svm);
@@ -367,6 +356,9 @@
                 svm_dstack_push(svm, svm_unit_there(svm, there));
             }
             break;
+        case SVM_HLT:
+            printf("Halted\n");
+            return;
         default:
             printf("Unrecognised op %d\n", code);
             return;
