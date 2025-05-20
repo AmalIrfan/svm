@@ -6,7 +6,7 @@
 #define SVM_IMPLEMENTATION
 #include "svm.h"
 
-#define SAS_MAX_SYMBOLS 20
+#define SAS_MAX_SYMBOLS 100
 #define SAS_TOKEN 20
 
 typedef struct sas_symbol {

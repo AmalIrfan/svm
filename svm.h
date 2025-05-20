@@ -64,6 +64,7 @@ typedef enum svm_code {
     SVM_DUP,
     SVM_DRP,
     SVM_OVR,
+    SVM_ROT,
     _SVM_MAX
 } svm_code;
 
@@ -84,7 +85,8 @@ const char* svm_code_str[] = {
     "PSH",
     "DUP",
     "DRP",
-    "OVR"
+    "OVR",
+    "ROT"
 };
 
 #ifdef SVM_IMPLEMENTATION
@@ -196,7 +198,6 @@ void svm_execute(svm_state* svm) {
                 svm_dstack_push(svm, over);
             }
             break;
-#if 0
         case SVM_ROT:
             svm_advance(svm);
             {
@@ -208,7 +209,6 @@ void svm_execute(svm_state* svm) {
                 svm_dstack_push(svm, back);
             }
             break;
-#endif
         case SVM_PSH:
             svm_advance(svm);
             {
