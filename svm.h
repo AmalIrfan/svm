@@ -55,6 +55,7 @@ typedef enum svm_code {
     SVM_BNG,
     SVM_ADD,
     SVM_SUB,
+    SVM_AND,
     SVM_LIT,
     SVM_LAD,
     SVM_FCH,
@@ -77,6 +78,7 @@ const char* svm_code_str[] = {
     "BNG",
     "ADD",
     "SUB",
+    "AND",
     "LIT",
     "LAD",
     "FCH",
@@ -116,6 +118,9 @@ void svm_execute(svm_state* svm) {
         code = (svm_code)svm_unit_here(svm);
         if (svm->debug) {
             int i = 0;
+            FILE *fi = fopen("/dev/tty", "r");
+            fgetc(fi);
+            fclose(fi);
             fprintf(stderr, "%3d %5s", svm->pc, ((int)code > 0 ? svm_code_str[code] : ""));
             if (code == SVM_LIT || code == SVM_BNZ) {
                 fprintf(stderr, " %3hhd  ", svm_unit_there(svm, svm->pc + 1));
@@ -135,6 +140,9 @@ void svm_execute(svm_state* svm) {
                         (i + sizeof(svm_addr)/sizeof(svm_unit) >= svm->rp ? "" : ", "));
             }
             fputs("]\n", stderr);
+            FILE *fh = fopen("memdump", "w");
+            fwrite(svm->memory, 1, MEMORY_SIZE, fh);
+            fclose(fh);
         }
         switch (code) {
         case SVM_NOP:
@@ -237,6 +245,13 @@ void svm_execute(svm_state* svm) {
                 svm_dstack_set_top(svm, svm_dstack_view(svm) + top);
             }
             break;
+        case SVM_AND:
+            svm_advance(svm);
+            {
+                svm_unit top = svm_dstack_pop(svm);
+                svm_dstack_set_top(svm, svm_dstack_view(svm) & top);
+            }
+            break;
 #if 0
         case SVM_MUL:
             svm_advance(svm);
@@ -302,12 +317,6 @@ void svm_execute(svm_state* svm) {
                 svm_dstack_set_top(svm, ~svm_dstack_view(svm));
             }
             break;
-        case SVM_AND:
-            svm_advance(svm);
-            {
-                svm_unit top = svm_dstack_pop(svm);
-                svm_dstack_set_top(svm, svm_dstack_view(svm) & top);
-            }
             break;
         case SVM_OR:
             svm_advance(svm);
