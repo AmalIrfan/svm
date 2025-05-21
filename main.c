@@ -3,7 +3,7 @@
 #define SVM_IMPLEMENTATION
 #include "svm.h"
 
-#define SVM_CODE_MAX 200
+#define SVM_CODE_MAX 1000
 
 int main(int argc, char *argv[]) {
     svm_state svm;

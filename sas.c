@@ -21,7 +21,7 @@ typedef struct sas_symbol_array {
 } sas_symbol_array;
 
 typedef struct sas_state {
-    svm_unit code[200];
+    svm_unit code[1000];
     sas_symbol_array symbol_defs;
     sas_symbol_array symbol_uses;
     svm_addr here;
@@ -218,38 +218,43 @@ int sas_token_is_symbol_definition(const char* token) {
 }
 
 int sas_make_symbol_def(sas_state* sas, const char* token) {
-    sas_symbol l = {0};
+    sas_symbol symb = {0};
     int n = strlen(token);
     if (sas->symbol_defs.index >= SAS_MAX_SYMBOLS) {
         fprintf(stderr, "Error: too many symbol defs\n");
         return 1;
     }
-    if (sas_symbol_exists(sas, l.name)) {
-        fprintf(stderr, "Error: symbol redefintion `%s`\n", l.name);
-        return 1;
+    if (token[n - 1] == ':') {
+        symb = sas_make_symbol(token, sas->here, 1, 0);
+        if (sas_symbol_exists(sas, symb.name)) {
+            fprintf(stderr, "Error: symbol redefintion `%s`\n", symb.name);
+            return 1;
+        }
     }
-    if (token[n - 1] == ':')
-        l = sas_make_symbol(token, sas->here, 1, 0);
     else if (token[n - 1] == '=') {
-        l = sas_make_symbol(token, 0, 1, 0);
+        symb = sas_make_symbol(token, 0, 1, 0);
+        if (sas_symbol_exists(sas, symb.name)) {
+            fprintf(stderr, "Error: symbol redefintion `%s`\n", symb.name);
+            return 1;
+        }
         token = sas_get_token(sas->fh);
         if (!sas_token_is_number(token)) {
-            fprintf(stderr, "Error: symbol must be followed by a number: `%s %s`\n", l.name, token);
+            fprintf(stderr, "Error: symbol must be followed by a number: `%s %s`\n", symb.name, token);
             return 1;
         }
         n = sas_make_number(token);
         if ((unsigned int)n <= 0xFF) {
-            l.address = n;
-            l.addr = 0;
+            symb.address = n;
+            symb.addr = 0;
         } else if ((unsigned int)n <= 0xFFFF) {
-            l.address = n;
-            l.addr = 1;
+            symb.address = n;
+            symb.addr = 1;
         } else {
             fprintf(stderr, "Error: number out of range: `%x`\n", n);
             return 1;
         }
     }
-    sas->symbol_defs.symbols[sas->symbol_defs.index] = l;
+    sas->symbol_defs.symbols[sas->symbol_defs.index] = symb;
     sas->symbol_defs.index++;
     return 0;
 }
