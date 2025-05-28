@@ -1,0 +1,50 @@
+#ifndef _OPS_H_
+#define _OPS_H_
+
+#define SVM_NOP  0
+#define SVM_HLT  1
+#define SVM_CAL  2
+#define SVM_RET  3
+#define SVM_BNZ  4
+#define SVM_BNG  5
+#define SVM_ADD  6
+#define SVM_SUB  7
+#define SVM_AND  8
+#define SVM_LIT  9
+#define SVM_LAD 10
+#define SVM_FCH 11
+#define SVM_PUT 12
+#define SVM_POP 13
+#define SVM_PSH 14
+#define SVM_DUP 15
+#define SVM_DRP 16
+#define SVM_OVR 17
+#define SVM_ROT 18
+
+#define SVM_MIN_OP SVM_NOP
+#define SVM_MAX_OP SVM_ROT
+
+const char* svm_code_str[] = {
+    "NOP",  /*  0 */
+    "HLT",  /*  1 */
+    "CAL",  /*  2 */
+    "RET",  /*  3 */
+    "BNZ",  /*  4 */
+    "BNG",  /*  5 */
+    "ADD",  /*  6 */
+    "SUB",  /*  7 */
+    "AND",  /*  8 */
+    "LIT",  /*  9 */
+    "LAD",  /* 10 */
+    "FCH",  /* 11 */
+    "PUT",  /* 12 */
+    "POP",  /* 13 */
+    "PSH",  /* 14 */
+    "DUP",  /* 15 */
+    "DRP",  /* 16 */
+    "OVR",  /* 17 */
+    "ROT",  /* 18 */
+0,
+};
+
+#endif /* _OPS_H_ */

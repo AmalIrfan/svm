@@ -46,50 +46,9 @@ svm_addr svm_rstack_pop(svm_state* svm);
 void     svm_jump(svm_state* svm, svm_addr there);
 void     svm_check_if_port(svm_state* svm, svm_addr there);
 
-typedef enum svm_code {
-    SVM_NOP,
-    SVM_HLT,
-    SVM_CAL,
-    SVM_RET,
-    SVM_BNZ,
-    SVM_BNG,
-    SVM_ADD,
-    SVM_SUB,
-    SVM_AND,
-    SVM_LIT,
-    SVM_LAD,
-    SVM_FCH,
-    SVM_PUT,
-    SVM_POP,
-    SVM_PSH,
-    SVM_DUP,
-    SVM_DRP,
-    SVM_OVR,
-    SVM_ROT,
-    _SVM_MAX
-} svm_code;
+typedef svm_unit svm_code;
 
-const char* svm_code_str[] = {
-    "NOP",
-    "HLT",
-    "CAL",
-    "RET",
-    "BNZ",
-    "BNG",
-    "ADD",
-    "SUB",
-    "AND",
-    "LIT",
-    "LAD",
-    "FCH",
-    "PUT",
-    "POP",
-    "PSH",
-    "DUP",
-    "DRP",
-    "OVR",
-    "ROT"
-};
+#include "ops.h"
 
 #ifdef SVM_IMPLEMENTATION
 #include <stdio.h>
@@ -118,6 +77,7 @@ void svm_execute(svm_state* svm) {
         code = (svm_code)svm_unit_here(svm);
         if (svm->debug) {
             int i = 0;
+            FILE *fh = 0;
             FILE *fi = fopen("/dev/tty", "r");
             fgetc(fi);
             fclose(fi);
@@ -140,7 +100,7 @@ void svm_execute(svm_state* svm) {
                         (i + sizeof(svm_addr)/sizeof(svm_unit) >= svm->rp ? "" : ", "));
             }
             fputs("]\n", stderr);
-            FILE *fh = fopen("memdump", "w");
+            fh = fopen("memdump", "w");
             fwrite(svm->memory, 1, MEMORY_SIZE, fh);
             fclose(fh);
         }

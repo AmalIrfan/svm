@@ -114,7 +114,7 @@ int sas_disassemble(sas_state* sas) {
     int val = 0;
     fread(&ins, sizeof(svm_unit), 1, sas->fh);
     while (!feof(sas->fh)) {
-        if (ins >= SVM_NOP && ins < _SVM_MAX)
+        if (ins >= SVM_MIN_OP && ins <= SVM_MAX_OP)
             fprintf(stdout, "    %s", svm_code_str[ins]);
         else
             fprintf(stdout, "    error: %hhd\n", ins);
@@ -328,7 +328,7 @@ int sas_try_assemble(sas_state* sas, const char* token) {
     for (i = 0; i < n; i++) {
         dir[i] = toupper(dir[i]);
     }
-    for (code = SVM_NOP; code < _SVM_MAX; code++) {
+    for (code = SVM_MIN_OP; code <= SVM_MAX_OP; code++) {
         if (strcmp(svm_code_str[code], dir) == 0) {
             if (code == SVM_CAL || code == SVM_LAD)
                 sas->addr = 1;
