@@ -24,6 +24,9 @@
 #define SVM_MIN_OP SVM_NOP
 #define SVM_MAX_OP SVM_ROT
 
+#ifdef SVM_CODE_STR
+const char** svm_code_str;
+#elif defined(SVM_CODE_STR_DEF)
 const char* svm_code_str[] = {
     "NOP",  /*  0 */
     "HLT",  /*  1 */
@@ -44,7 +47,33 @@ const char* svm_code_str[] = {
     "DRP",  /* 16 */
     "OVR",  /* 17 */
     "ROT",  /* 18 */
-0,
 };
+#endif /* SVM_CODE_STR */
+
+#ifdef SVM_CODE_FUNC
+void*const(*const  svm_code_func)(svm_state*);
+#elif defined(SVM_CODE_FUNC_DEF)
+void(*const svm_code_func[])(svm_state*) = {
+    &svm_exec_NOP,  /*  0 */
+    &svm_exec_HLT,  /*  1 */
+    &svm_exec_CAL,  /*  2 */
+    &svm_exec_RET,  /*  3 */
+    &svm_exec_BNZ,  /*  4 */
+    &svm_exec_BNG,  /*  5 */
+    &svm_exec_ADD,  /*  6 */
+    &svm_exec_SUB,  /*  7 */
+    &svm_exec_AND,  /*  8 */
+    &svm_exec_LIT,  /*  9 */
+    &svm_exec_LAD,  /* 10 */
+    &svm_exec_FCH,  /* 11 */
+    &svm_exec_PUT,  /* 12 */
+    &svm_exec_POP,  /* 13 */
+    &svm_exec_PSH,  /* 14 */
+    &svm_exec_DUP,  /* 15 */
+    &svm_exec_DRP,  /* 16 */
+    &svm_exec_OVR,  /* 17 */
+    &svm_exec_ROT,  /* 18 */
+};
+#endif /* SVM_CODE_FUNC */
 
 #endif /* _OPS_H_ */

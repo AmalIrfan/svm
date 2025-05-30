@@ -22,9 +22,9 @@ Ops
 +---------+--------------------------------------------------------------------+
 | ``HLT`` | stop the cpu                                                       |
 +---------+--------------------------------------------------------------------+
-| ``CAL`` | go to address, push current address to return stack                |
+| ``CAL`` | go to dwordess, push current dwordess to return stack                |
 +---------+--------------------------------------------------------------------+
-| ``RET`` | go to address in top of return stack, consumes                     |
+| ``RET`` | go to dwordess in top of return stack, consumes                     |
 +---------+--------------------------------------------------------------------+
 | ``BNZ`` | branch if top of data stack is not zero, consumes                  |
 +---------+--------------------------------------------------------------------+
@@ -36,11 +36,11 @@ Ops
 +---------+--------------------------------------------------------------------+
 | ``LIT B`` | load byte from code                                              |
 +---------+--------------------------------------------------------------------+
-| ``LAD A`` | load address from code                                           |
+| ``LAD A`` | load dwordess from code                                           |
 +---------+--------------------------------------------------------------------+
-| ``FCH`` | fetch data at the address from the top of data stack, consumes     |
+| ``FCH`` | fetch data at the dwordess from the top of data stack, consumes     |
 +---------+--------------------------------------------------------------------+
-| ``PUT`` | put data at the address from the top of data stack, consumes       |
+| ``PUT`` | put data at the dwordess from the top of data stack, consumes       |
 +---------+--------------------------------------------------------------------+
 | ``POP`` | pop top of return stack and push it to top of data stack, produces |
 +---------+--------------------------------------------------------------------+

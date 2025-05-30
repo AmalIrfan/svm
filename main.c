@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[]) {
     svm_state svm;
-    svm_unit code[SVM_CODE_MAX] = {0};
+    svm_word code[SVM_CODE_MAX] = {0};
     int n = 0;
     bool debug = false;
     FILE* fh = 0;

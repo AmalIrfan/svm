@@ -1,0 +1,4 @@
+  cal entry
+  hlt
+entry:
+  ret
