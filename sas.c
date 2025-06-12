@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <ctype.h>
 
 #define SVM_IMPLEMENTATION
@@ -42,6 +41,7 @@ int sas_resolve_symbol_uses(sas_state* sas);
 int sas_try_assemble(sas_state* sas, const char* token);
 int sas_assemble(sas_state* sas);
 int sas_disassemble(sas_state* sas);
+int sas_stricmp(const char* a, const char* b);
 
 int main(int argc, const char* argv[]) {
     sas_state sas = {0};
@@ -135,6 +135,15 @@ int sas_disassemble(sas_state* sas) {
     return 0;
 }
 
+int sas_stricmp(const char* a, const char* b) {
+    /* TODO: NULL check */
+    while (*a && *b && toupper(*a) == toupper(*b)) {
+        a++;
+        b++;
+    }
+    return (int)*a - (int)*b;
+}
+
 const char* sas_get_token(FILE* fh) {
     static char buf[SAS_TOKEN];
     int i = 0;
@@ -205,7 +214,7 @@ int sas_make_number(const char* token) {
 int sas_symbol_exists(sas_state* sas, const char* name) {
     int i = 0;
     for (i = 0; i < sas->symbol_defs.index; i++) {
-        if (strcasecmp(name, sas->symbol_defs.symbols[i].name) == 0)
+        if (sas_stricmp(name, sas->symbol_defs.symbols[i].name) == 0)
             return 1;
     }
     return 0;
