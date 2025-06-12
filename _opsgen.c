@@ -19,7 +19,7 @@ int main() {
             fprintf(stderr, "load_opnames: buffer overflow\n");
         }
         if (opcount == -2) {
-            perror("exec.h");
+            perror("svm.h");
         }
         return 1;
     }
@@ -101,7 +101,7 @@ static int load_opnames(char* buf, int bufsize, const char* res[], int rescount)
     int capture = 0;
     static const char*const prefix = "svm_exec_";
     static const char delim = '(';
-    FILE* fh = fopen("exec.h", "r");
+    FILE* fh = fopen("svm.h", "r");
     if (!fh)
         return -2;
     while (!feof(fh)) {
