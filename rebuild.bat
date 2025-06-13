@@ -6,3 +6,4 @@ build\_opsgen
 cd build
 cl %CFLAGS% /Fe.\main.exe ..\main.c
 cl %CFLAGS% /Fe.\sas.exe ..\sas.c
+cd ..
