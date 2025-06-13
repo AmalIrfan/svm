@@ -67,7 +67,6 @@ void svm_exec_CAL(svm_state* svm) {
     svm_advance(svm);
     {
         svm_dword there = (svm_dword)((svm->cache >> ((svm->pc % SVM_VWORD) * sizeof(svm_word) * 8)) & 0xFFFF);
-        fprintf(stderr, "%04X\n", there);
         svm_advance_dword(svm);
         svm_rstack_push(svm, svm->pc);
         svm_jump(svm, there);
