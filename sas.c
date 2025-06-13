@@ -10,7 +10,7 @@
 
 typedef struct sas_symbol {
     char name[SAS_TOKEN];
-    svm_dword dwordess;
+    svm_dword address;
     int dword; /* >0xFF */
 } sas_symbol;
 
@@ -256,10 +256,10 @@ int sas_make_symbol_def(sas_state* sas, const char* token) {
         }
         n = sas_make_number(token);
         if ((unsigned int)n <= 0xFF) {
-            symb.dwordess = n;
+            symb.address = n;
             symb.dword = 0;
         } else if ((unsigned int)n <= 0xFFFF) {
-            symb.dwordess = n;
+            symb.address = n;
             symb.dword = 1;
         } else {
             fprintf(stderr, "Error: number out of range: `%x`\n", n);
@@ -276,7 +276,7 @@ sas_symbol sas_make_symbol(const char* name, svm_dword here, int suffix, int dwo
     int n = strlen(name) - suffix;
     memcpy(l.name, name, n);
     l.name[n] = 0;
-    l.dwordess = here;
+    l.address = here;
     l.dword = dword;
     return l;
 }
@@ -310,16 +310,16 @@ int sas_resolve_symbol_uses(sas_state* sas) {
     for (j = 0; j < sas->symbol_uses.index; j++) {
         matches = 0;
         name = sas->symbol_uses.symbols[j].name;
-        there = sas->symbol_uses.symbols[j].dwordess;
+        there = sas->symbol_uses.symbols[j].address;
         dword = sas->symbol_uses.symbols[j].dword;
         /* set uses to defs as the match */
         for (i = 0; i < sas->symbol_defs.index; i++) {
             if (strcmp(name, sas->symbol_defs.symbols[i].name) == 0) {
                 if (dword) {
-                    *(svm_dword*)(sas->code + there) = sas->symbol_defs.symbols[i].dwordess;
+                    *(svm_dword*)(sas->code + there) = sas->symbol_defs.symbols[i].address;
                 }
                 else
-                    sas->code[there] = sas->symbol_defs.symbols[i].dwordess - there - sizeof(svm_word);
+                    sas->code[there] = sas->symbol_defs.symbols[i].address - there - sizeof(svm_word);
                 matches++;
             }
         }
