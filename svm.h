@@ -97,16 +97,25 @@ void svm_exec_BNG(svm_state* svm) {
     }
 }
 void svm_exec_ADD(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_word top = svm_dstack_pop(svm);
+        svm_dstack_set_top(svm, svm_dstack_view(svm) + top);
+    }
 }
 void svm_exec_SUB(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_word top = svm_dstack_pop(svm);
+        svm_dstack_set_top(svm, svm_dstack_view(svm) - top);
+    }
 }
 void svm_exec_AND(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_word top = svm_dstack_pop(svm);
+        svm_dstack_set_top(svm, svm_dstack_view(svm) & top);
+    }
 }
 void svm_exec_LIT(svm_state* svm) {
     svm_advance(svm);
@@ -124,36 +133,68 @@ void svm_exec_LAD(svm_state* svm) {
 	
 }
 void svm_exec_FCH(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_dword dword_h = svm_dstack_pop(svm);
+        svm_dword dword_l = svm_dstack_pop(svm);
+        svm_dword there = (dword_h & 0xFF) << 8 | (dword_l & 0xFF);
+        svm_check_if_port(svm, there);
+        svm_dstack_push(svm, svm_word_there(svm, there));
+    }
 }
 void svm_exec_PUT(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_dword dword_h = svm_dstack_pop(svm);
+        svm_dword dword_l = svm_dstack_pop(svm);
+        svm_dword there = (dword_h & 0xFF) << 8 | (dword_l & 0xFF);
+        svm_store_there(svm, there, svm_dstack_pop(svm));
+    }
 }
 void svm_exec_POP(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_dword dword = svm_rstack_pop(svm);
+        svm_dstack_push(svm, dword & 0xFF);
+        svm_dstack_push(svm, dword >> 8);
+    }
 }
 void svm_exec_PSH(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_dword dword_h = svm_dstack_pop(svm);
+        svm_dword dword_l = svm_dstack_pop(svm);
+        svm_dword dword = (dword_h & 0xFF) << 8 | (dword_l & 0xFF);
+        svm_rstack_push(svm, dword);
+    }
 }
 void svm_exec_DUP(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    svm_dstack_push(svm, svm_dstack_view(svm));
 }
 void svm_exec_DRP(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    svm_dstack_pop(svm);
 }
 void svm_exec_OVR(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_word top = svm_dstack_pop(svm);
+        svm_word over = svm_dstack_view(svm);
+        svm_dstack_push(svm, top);
+        svm_dstack_push(svm, over);
+    }
 }
 void svm_exec_ROT(svm_state* svm) {
-	(void)svm;
-    exit(2);
+    svm_advance(svm);
+    {
+        svm_word top = svm_dstack_pop(svm);
+        svm_word over = svm_dstack_pop(svm);
+        svm_word back = svm_dstack_pop(svm);
+        svm_dstack_push(svm, over);
+        svm_dstack_push(svm, top);
+        svm_dstack_push(svm, back);
+    }
 }
 
 #define SVM_CODE_STR_DEF
@@ -192,9 +233,11 @@ void svm_execute(svm_state* svm) {
         if (svm->debug) {
             int i = 0;
             FILE *fh = 0;
+            /*
             FILE *fi = fopen("/dev/tty", "r");
             fgetc(fi);
             fclose(fi);
+            */
             fprintf(stderr, "%3d %5s", svm->pc, ((int)code > 0 ? svm_code_str[code] : ""));
             if (code == SVM_LIT || code == SVM_BNZ) {
                 fprintf(stderr, " %3hhd  ", svm_word_there(svm, svm->pc + 1));
