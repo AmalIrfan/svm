@@ -344,11 +344,11 @@ int sas_try_assemble(sas_state* sas, const char* token) {
         if (strcmp(svm_code_str[code], dir) == 0) {
             if (code == SVM_CAL || code == SVM_LAD) { /* 3word */
                 sas->dword = 1;
-                if (sas->here % SVM_VWORD != 0 && sas->here % SVM_VWORD >= 3) /* 2 or less left */
+                if (sas->here % SVM_VWORD != 0 && SVM_VWORD - (sas->here % SVM_VWORD) < 3) /* 2 or less left */
                     sas->here += SVM_VWORD - (sas->here % SVM_VWORD);
             }
             if (code == SVM_BNZ || code == SVM_BNG) { /* 2word */
-                if (sas->here % SVM_VWORD != 0 && sas->here % SVM_VWORD == 3) /* 1 left */
+                if (sas->here % SVM_VWORD != 0 && SVM_VWORD - (sas->here % SVM_VWORD) < 2) /* 1 left */
                     sas->here += SVM_VWORD - (sas->here % SVM_VWORD);
             }
             sas->code[sas->here] = code;
