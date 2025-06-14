@@ -9,17 +9,19 @@
 #define SVM_BNG  5
 #define SVM_ADD  6
 #define SVM_SUB  7
-#define SVM_AND  8
-#define SVM_LIT  9
-#define SVM_LAD 10
-#define SVM_FCH 11
-#define SVM_PUT 12
-#define SVM_POP 13
-#define SVM_PSH 14
-#define SVM_DUP 15
-#define SVM_DRP 16
-#define SVM_OVR 17
-#define SVM_ROT 18
+#define SVM_DIV  8
+#define SVM_AND  9
+#define SVM_OR 10
+#define SVM_LIT 11
+#define SVM_LAD 12
+#define SVM_FCH 13
+#define SVM_PUT 14
+#define SVM_POP 15
+#define SVM_PSH 16
+#define SVM_DUP 17
+#define SVM_DRP 18
+#define SVM_OVR 19
+#define SVM_ROT 20
 
 #define SVM_MIN_OP SVM_NOP
 #define SVM_MAX_OP SVM_ROT
@@ -36,17 +38,19 @@ const char* svm_code_str[] = {
     "BNG",  /*  5 */
     "ADD",  /*  6 */
     "SUB",  /*  7 */
-    "AND",  /*  8 */
-    "LIT",  /*  9 */
-    "LAD",  /* 10 */
-    "FCH",  /* 11 */
-    "PUT",  /* 12 */
-    "POP",  /* 13 */
-    "PSH",  /* 14 */
-    "DUP",  /* 15 */
-    "DRP",  /* 16 */
-    "OVR",  /* 17 */
-    "ROT",  /* 18 */
+    "DIV",  /*  8 */
+    "AND",  /*  9 */
+    "OR",  /* 10 */
+    "LIT",  /* 11 */
+    "LAD",  /* 12 */
+    "FCH",  /* 13 */
+    "PUT",  /* 14 */
+    "POP",  /* 15 */
+    "PSH",  /* 16 */
+    "DUP",  /* 17 */
+    "DRP",  /* 18 */
+    "OVR",  /* 19 */
+    "ROT",  /* 20 */
 };
 #endif /* SVM_CODE_STR */
 
@@ -62,17 +66,19 @@ void(*const svm_code_func[])(svm_state*) = {
     &svm_exec_BNG,  /*  5 */
     &svm_exec_ADD,  /*  6 */
     &svm_exec_SUB,  /*  7 */
-    &svm_exec_AND,  /*  8 */
-    &svm_exec_LIT,  /*  9 */
-    &svm_exec_LAD,  /* 10 */
-    &svm_exec_FCH,  /* 11 */
-    &svm_exec_PUT,  /* 12 */
-    &svm_exec_POP,  /* 13 */
-    &svm_exec_PSH,  /* 14 */
-    &svm_exec_DUP,  /* 15 */
-    &svm_exec_DRP,  /* 16 */
-    &svm_exec_OVR,  /* 17 */
-    &svm_exec_ROT,  /* 18 */
+    &svm_exec_DIV,  /*  8 */
+    &svm_exec_AND,  /*  9 */
+    &svm_exec_OR,  /* 10 */
+    &svm_exec_LIT,  /* 11 */
+    &svm_exec_LAD,  /* 12 */
+    &svm_exec_FCH,  /* 13 */
+    &svm_exec_PUT,  /* 14 */
+    &svm_exec_POP,  /* 15 */
+    &svm_exec_PSH,  /* 16 */
+    &svm_exec_DUP,  /* 17 */
+    &svm_exec_DRP,  /* 18 */
+    &svm_exec_OVR,  /* 19 */
+    &svm_exec_ROT,  /* 20 */
 };
 #endif /* SVM_CODE_FUNC */
 

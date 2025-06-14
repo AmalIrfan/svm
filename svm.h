@@ -110,11 +110,27 @@ void svm_exec_SUB(svm_state* svm) {
         svm_dstack_set_top(svm, svm_dstack_view(svm) - top);
     }
 }
+void svm_exec_DIV(svm_state* svm) {
+    svm_advance(svm);
+    {
+        svm_word top = svm_dstack_pop(svm);
+        svm_word over = svm_dstack_view(svm);
+        svm_dstack_set_top(svm, over / top);
+        svm_dstack_push(svm, over % top);
+    }
+}
 void svm_exec_AND(svm_state* svm) {
     svm_advance(svm);
     {
         svm_word top = svm_dstack_pop(svm);
         svm_dstack_set_top(svm, svm_dstack_view(svm) & top);
+    }
+}
+void svm_exec_OR(svm_state* svm) {
+    svm_advance(svm);
+    {
+        svm_word top = svm_dstack_pop(svm);
+        svm_dstack_set_top(svm, svm_dstack_view(svm) | top);
     }
 }
 void svm_exec_LIT(svm_state* svm) {
