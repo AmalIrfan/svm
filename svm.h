@@ -31,6 +31,7 @@ typedef struct svm_state {
     bool debug;
     bool halt;
     bool jumped;
+    svm_dword loaded;
 } svm_state;
 
 void svm_init(svm_state* svm);
@@ -240,8 +241,9 @@ void svm_load(svm_state* svm, const svm_word* code, const svm_dword size, bool d
 void svm_execute(svm_state* svm) {
     svm_code code = SVM_NOP;
     while (!svm->halt) {
-        if (svm->pc % SVM_VWORD == 0 || svm->jumped) {
+        if (svm->pc >= svm->loaded || svm->jumped) {
             svm->cache = *(svm_vword*)(svm->memory + GENERAL_OFFSET + svm->pc - (svm->pc % SVM_VWORD));
+            svm->loaded = svm->pc - (svm->pc % SVM_VWORD) + SVM_VWORD;
             if (svm->jumped)
                 svm->jumped = false;
         }
@@ -254,7 +256,7 @@ void svm_execute(svm_state* svm) {
             fgetc(fi);
             fclose(fi);
             */
-            fprintf(stderr, "%3d %5s", svm->pc, ((int)code > 0 ? svm_code_str[code] : ""));
+            fprintf(stderr, "%3d %5s", svm->pc, (code >= SVM_MIN_OP && code <= SVM_MAX_OP ? svm_code_str[code] : ""));
             if (code == SVM_LIT || code == SVM_BNZ) {
                 fprintf(stderr, " %3hhd  ", svm_word_there(svm, svm->pc + 1));
             } else if (code == SVM_CAL || code == SVM_LAD) {
