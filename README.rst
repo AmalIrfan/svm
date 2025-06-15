@@ -6,6 +6,73 @@ like `popa <https://github.com/AmalIrfan/popa>`_.
 
 I have started taking inspiration from `colorforth <https://colorforth.github.io/inst.htm>_`.
 
+Build & Run
+-----------
+
+Windows Build & Run
+^^^^^^^^^^^^^^^^^^^
+
+MSVC
+
+```
+.\rebuild.bat cl
+```
+
+gcc
+
+```
+.\rebuild.bat cc
+```
+
+**Running**
+
+Assemble a program
+
+```
+cd build
+.\sas.exe .\build\output ..\examples\06_data_man.txt
+```
+
+Run the program
+
+```
+.\main.exe .\output
+```
+
+Run the program with log
+
+```
+.\main.exe d .\output
+```
+
+Posix Build & Run
+^^^^^^^^^^^^^^^^^
+
+```
+./rebuild.sh
+```
+
+**Running**
+
+Assemble a program
+
+```
+cd build
+./sas.exe ./build/output ../examples/06_data_man.txt
+```
+
+Run the program
+
+```
+./main.exe ./output
+```
+
+Run the program with log
+
+```
+./main.exe d ./output
+```
+
 Spec aim:
 ---------
 - Memory: 65536 (0000 to FFFF)
