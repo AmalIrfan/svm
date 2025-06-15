@@ -26,6 +26,7 @@ typedef struct sas_state {
     svm_dword here;
     int dword;
     FILE* fh;
+    FILE* outfh;
 } sas_state;
 
 const char* sas_get_token(FILE* fh);
@@ -47,26 +48,40 @@ int main(int argc, const char* argv[]) {
     sas_state sas = {0};
     int fl = 1;
     int dis = 0;
+    int ret = 0;
     if (argc == 3) {
         fl++;
         if (strcmp(argv[1],"d") == 0)
             dis = 1;
+        else {
+            sas.outfh = fopen(argv[1], "wb");
+            if (sas.outfh == NULL) {
+                perror(argv[1]);
+                return 1;
+            }
+        }
     }
     if (argc != 2 && argc != 3) {
-        fprintf(stderr, "Usage: %s [d] input > output\n", argv[0]);
+        fprintf(stderr, "Usage: %s [d] input > output\n"
+                        "       %s output input\n", argv[0], argv[0]);
         return 1;
     }
-    sas.fh = fopen(argv[fl], "r");
+    if (dis == 0)
+        sas.fh = fopen(argv[fl], "r");
+    else
+        sas.fh = fopen(argv[fl], "rb");
     if (!sas.fh) {
         perror(argv[fl]);
         return 1;
     }
     if (dis == 0)
-        sas_assemble(&sas);
+        ret = sas_assemble(&sas);
     else
-        sas_disassemble(&sas);
+        ret = sas_disassemble(&sas);
     fclose(sas.fh);
-    return 0;
+    if (sas.outfh)
+        fclose(sas.outfh);
+    return ret;
 }
 
 int sas_assemble(sas_state* sas) {
@@ -108,29 +123,37 @@ int sas_assemble(sas_state* sas) {
     if (sas->here % SVM_VWORD)
         sas->here += SVM_VWORD - (sas->here % SVM_VWORD);
 
-    fwrite(sas->code, sizeof(sas->code[0]), sas->here, stdout);
+    fwrite(sas->code, sizeof(sas->code[0]), sas->here, sas->outfh ? sas->outfh : stdout);
     return 0;
 }
 
 int sas_disassemble(sas_state* sas) {
+    svm_vword cache = 0;
+    svm_dword pc = 0;
     svm_code ins = 0;
     int val = 0;
-    fread(&ins, sizeof(svm_word), 1, sas->fh);
+    fread(&cache, 1, sizeof(cache), sas->fh);
     while (!feof(sas->fh)) {
-        if (ins >= SVM_MIN_OP && ins <= SVM_MAX_OP)
+        ins = (cache >> (SVM_VWORD - (pc % SVM_VWORD) - 1)*8) & 0xFF;
+        pc++;
+        if (ins >= SVM_MIN_OP && ins <= SVM_MAX_OP) {
             fprintf(stdout, "    %s", svm_code_str[ins]);
+        }
         else
             fprintf(stdout, "    error: %hhd\n", ins);
         if (ins == SVM_LIT || ins == SVM_BNZ || ins == SVM_BNG) {
-            fread(&val, sizeof(svm_word), 1, sas->fh);
+            val = (cache >> (SVM_VWORD - (pc % SVM_VWORD) - 1)*8) & 0xFF;
             fprintf(stdout, " %hhd", val);
+            pc++;
         }
         if (ins == SVM_CAL || ins == SVM_LAD) {
-            fread(&val, sizeof(svm_dword), 1, sas->fh);
+            val = (cache >> (SVM_VWORD - (pc % SVM_VWORD) - 1)*8) & 0xFFFF;
             fprintf(stdout, " %hd", val);
+            pc += 2;
         }
         putc('\n', stdout);
-        fread(&ins, sizeof(svm_word), 1, sas->fh);
+        if (pc % SVM_VWORD == 0)
+            fread(&cache, 1, sizeof(cache), sas->fh);
     }
     return 0;
 }
