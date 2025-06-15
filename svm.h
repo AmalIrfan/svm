@@ -202,6 +202,15 @@ void svm_exec_OVR(svm_state* svm) {
         svm_dstack_push(svm, over);
     }
 }
+void svm_exec_SWP(svm_state* svm) {
+    svm_advance(svm);
+    {
+        svm_word top = svm_dstack_pop(svm);
+        svm_word over = svm_dstack_view(svm);
+        svm_dstack_set_top(svm, top);
+        svm_dstack_push(svm, over);
+    }
+}
 void svm_exec_ROT(svm_state* svm) {
     svm_advance(svm);
     {

@@ -1,59 +1,87 @@
-  call entry
-  -1
+  cal entry
+  hlt
 count: 0
 entry:
-  lita count ; 04 00
-  load       ; c
+  lit 10    ; 10
+.main_loop:
+  lad count ; 10 04 00
+  fch       ; 10 c
 
-  lit 1 ; c 1
-  add   ; c+1
-  dup   ; c' c'
+  lit 1 ; 10 c 1
+  add   ; 10 c+1
+  dup   ; 10 c' c'
 
-  lita count ; c' c' 04 00
-  store      ; c'
+  lad count ; 10 c' c' 04 00
+  put       ; 10 c'
 
-  dup ; c' c'
-  call print_num
+  dup           ; 10 c' c'
+  cal print_num ; 10 c'
 
-  lit 10    ; c' 10
-  lt        ; c'<10
-  jnz entry
+  ovr      ; 10 c' 10
+  cal putc ; c'
 
-  exit
+  ovr       ; 10 c' 10
+  sub       ; 10 c'-10
+  bng .main_loop
+  
+  drp
+
+  ret
 
 print_num:
-  nop   ; n
-  lit 0 ; n w
-  rpush ; n
+; n
+  lad 0 ; n 0 w
+  psh   ; n
 .pn_loop:
-
+; ... n
   lit 10 ; n 10
   div    ; n/10 n%10
   lit 48 ; n' n%10 48
   add    ; n' d
-  swap   ; d n'
+  swp    ; d n'
 
-  rpop   ; d n' w
-  lit 1  ; d n' w 1
-  add    ; d n' w+1
-  rpush  ; d n'
+  pop    ; d n' 0 w
+  lit 1  ; d n' 0 w 1
+  add    ; d n' 0 w+1
+  psh    ; d n'
 
   dup          ; d n' n'
-  jnz .pn_loop ; d n'
+  bnz .pn_loop ; ... d n'
 
-  drop ; d
-  rpop ; d w
+  drp ; ... d
+  pop ; ... d 0 w
+  swp ; ... d w 0
+  drp ; ... d w
 .pn_loop2:
-  swap  ; w d
-  write ; w
+  swp      ; ... w d
+  cal putc ; ... w
 
-  lit 1 ; w 1
-  sub   ; w-1
+  lit 1 ; ... w 1
+  sub   ; ... w-1
 
   dup           ; w' w'
-  jnz .pn_loop2 ; w'
+  bnz .pn_loop2 ; w'
 
-  drop
-  lit 10
-  write
-  exit
+  drp
+  ret
+ 
+PORT_IN= 65021
+PORT_OUT= 65022
+PORT_DATA= 65023
+
+
+getc:
+  lad PORT_IN ; PORT_IN
+  fch         ; 0
+  drp
+  lad PORT_DATA ; PORT_DATA
+  fch           ; c
+  ret
+
+putc:
+  lad PORT_DATA ; c PORT_DATA
+  put
+  lad PORT_OUT ; PORT_OUT
+  fch          ; 0
+  drp
+  ret

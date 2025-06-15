@@ -21,7 +21,8 @@
 #define SVM_DUP 17
 #define SVM_DRP 18
 #define SVM_OVR 19
-#define SVM_ROT 20
+#define SVM_SWP 20
+#define SVM_ROT 21
 
 #define SVM_MIN_OP SVM_NOP
 #define SVM_MAX_OP SVM_ROT
@@ -50,7 +51,8 @@ const char* svm_code_str[] = {
     "DUP",  /* 17 */
     "DRP",  /* 18 */
     "OVR",  /* 19 */
-    "ROT",  /* 20 */
+    "SWP",  /* 20 */
+    "ROT",  /* 21 */
 };
 #endif /* SVM_CODE_STR */
 
@@ -78,7 +80,8 @@ void(*const svm_code_func[])(svm_state*) = {
     &svm_exec_DUP,  /* 17 */
     &svm_exec_DRP,  /* 18 */
     &svm_exec_OVR,  /* 19 */
-    &svm_exec_ROT,  /* 20 */
+    &svm_exec_SWP,  /* 20 */
+    &svm_exec_ROT,  /* 21 */
 };
 #endif /* SVM_CODE_FUNC */
 
